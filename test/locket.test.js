@@ -424,14 +424,17 @@ test("all caption backgrounds resolve to local PNG assets and include fallback c
 
 test("all complete module variants route to the new repo and opt in to the selected widget", () => {
   const files = fs.readdirSync(root).filter(file => file.endsWith(".sgmodule"));
-  assert.equal(files.length, 7);
+  assert.equal(files.length, 8);
   for (const file of files) {
     const module = fs.readFileSync(path.join(root, file), "utf8");
     assert.ok(!module.includes("locket30s-fixed"));
     const lines = module.split("\n").filter(line => line.includes(" = type="));
     assert.equal(lines.length, 3);
     for (const line of lines) {
-      assert.ok(line.includes("/locket60s_amthanh_mic/main/scripts/locket.js?v=3.0.0"));
+      const target = file === "locket60s-refresh.sgmodule"
+        ? "/locket60s_amthanh_mic/9bb85e7170fab5ffd8160889c934ddb2cc5ec51b/scripts/locket.js"
+        : "/locket60s_amthanh_mic/main/scripts/locket.js?v=3.0.0";
+      assert.ok(line.includes(target));
       new RegExp(line.match(/pattern=(.*?), script-path=/)[1]);
     }
     const option = module.match(/argument=([^,]+)/);

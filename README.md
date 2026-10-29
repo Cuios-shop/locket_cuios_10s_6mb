@@ -25,6 +25,14 @@ Các link là module thay thế nhau, không bật đồng thời. Các tên loc
 
 ## Video 60 giây, 100 MB và âm thanh
 
+### Nếu đã xoá/cài lại module nhưng vẫn nghi dùng mã cũ
+
+Dùng [locket60s-refresh.sgmodule](https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/locket60s-refresh.sgmodule) thay cho module hiện tại. Bản Refresh r1 dùng tên rule riêng và URL script gắn commit `9bb85e7`, khác URL main để loại trừ đường dẫn script đã lưu. Nó chạy cùng mã v3.0.0, không thay tính năng và không tự xoá dữ liệu Locket. Bản này cố định tại v3.0.0, không tự nhận các thay đổi script tương lai từ main.
+
+Xoá module trong Shadowrocket không xoá cache Remote Config bên trong Locket. Tắt mọi module Locket khác, bật kết nối trước khi mở Locket và tìm log có `firebase: v3.0.0` cùng `captions=54`. Nếu có log nhưng UI vẫn cũ, cần kiểm tra bước activate/schema phía app; nếu không có log thì chưa quan sát được response Firebase qua script này.
+
+Firebase có fetch interval và activate riêng: [tài liệu chính thức](https://firebase.google.com/docs/remote-config/ios/get-started). Proxy không tự gọi được phương thức xoá cache/fetch/activate bên trong app. Không gỡ Locket hoặc reset quyền riêng tư chỉ để xử lý cache script.
+
 - Giữ các cờ mic/âm thanh của bản 2.1 mà người dùng đã thử thành công.
 - Đồng bộ thời lượng camera, thư viện, cắt và các cấu hình upload có sẵn về 60 giây.
 - Bổ sung giới hạn file ở camera_roll và các key entry tương ứng, xử lý các nhóm media có tên được hỗ trợ như gold/free/upload/limits nếu có trong response.
