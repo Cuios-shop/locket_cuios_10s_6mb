@@ -1,0 +1,12 @@
+#!name=Locket Gold & 60s - v2.0.0
+#!desc=v2.0.0: cấu hình thử nghiệm 60s, video thư viện, âm thanh và 20 ghi chú mới; cần kiểm tra trên thiết bị.
+#!author=Cuongqtx11
+#!moduleUrl=https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/locket60s.sgmodule
+
+[Script]
+locket60_cache = type=http-request, pattern=^https://(?:api\.revenuecat\.com/v1/(?:receipts|subscribers/[^/?#]+)/?(?:\?[^#]*)?$|firebaseremoteconfig\.googleapis\.com/v1/projects/locket-4252a/namespaces/firebase:fetch(?:\?[^#]*)?$), script-path=https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/scripts/locket.js?v=2.0.0, timeout=10
+locket60_gold = type=http-response, pattern=^https://api\.revenuecat\.com/v1/(?:receipts|subscribers/[^/?#]+)/?(?:\?[^#]*)?$, script-path=https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/scripts/locket.js?v=2.0.0, requires-body=true, max-size=1048576, timeout=10
+locket60_config = type=http-response, pattern=^https://firebaseremoteconfig\.googleapis\.com/v1/projects/locket-4252a/namespaces/firebase:fetch(?:\?[^#]*)?$, script-path=https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/scripts/locket.js?v=2.0.0, requires-body=true, max-size=1048576, timeout=10
+
+[MITM]
+hostname = %APPEND% api.revenuecat.com, firebaseremoteconfig.googleapis.com

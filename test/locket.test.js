@@ -26,6 +26,7 @@ function run(options = {}) {
   if (!options.requestOnly) {
     context.$response = {
       status: options.status === undefined ? 200 : options.status,
+      headers: options.responseHeaders,
       body: options.body === undefined
         ? JSON.stringify(options.payload || { subscriber: { entitlements: {}, subscriptions: {} } })
         : options.body
@@ -119,14 +120,15 @@ test("Firebase patches video settings and preserves unrelated and nested fields"
   };
   const result = run({ url: firebase, payload: { entries, state: "UPDATE", templateVersion: "12" } });
   const actual = result.body.entries;
-  assert.equal(JSON.parse(actual.camera).max_duration, 30);
+  assert.equal(JSON.parse(actual.camera).max_duration, 60);
   assert.equal(JSON.parse(actual.camera).quality_mbps, 4);
   assert.equal(JSON.parse(actual.camera).ultra_wide, false);
   assert.deepEqual(JSON.parse(actual.camera_roll).custom, { retained: true });
   assert.equal(JSON.parse(actual.feature_gates).new_feature, "enabled");
   assert.equal(JSON.parse(actual.feature_gates).longer_video, "enabled");
-  assert.equal(actual.video_max_duration, "30.0");
-  for (const key of ["untouched", "overlay_items", "storage_bucket"]) assert.equal(actual[key], entries[key]);
+  assert.equal(actual.video_max_duration, "60.0");
+  for (const key of ["untouched", "storage_bucket"]) assert.equal(actual[key], entries[key]);
+  assert.deepEqual(JSON.parse(actual.overlay_items)[0], JSON.parse(entries.overlay_items)[0]);
   assert.equal(result.body.templateVersion, "12");
   assert.ok(Object.values(actual).every(value => typeof value === "string"));
 });
@@ -172,11 +174,127 @@ const rules = moduleText.split("\n").filter(line => line.includes(" = type=")).m
 test("all module rules load an existing script in this repository", () => {
   assert.equal(rules.length, 3);
   for (const rule of rules) {
-    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/scripts/locket.js");
+    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/scripts/locket.js?v=2.0.0");
     assert.ok(fs.existsSync(path.join(root, "scripts/locket.js")));
   }
   assert.ok(!moduleText.includes("cloudfunctions"));
   assert.ok(!moduleText.includes("duyvinh09"));
+});
+
+test("60-second settings cover recording, library selection and trimming consistently", () => {
+  const result = run({ url: firebase, payload: { entries: {
+    camera: JSON.stringify({ video_duration: 15, recording_duration: 15 }),
+    camera_roll: JSON.stringify({ trim_max_duration: 15, camera_roll_video_max_duration: 15, maximum_duration: 15, maximumDuration: 15, enabled: false }),
+    max_video_record_duration: "15", video_upload_max_duration: "15", longerVideoDuration: "15",
+    can_record_video: "false", can_upload_video: "false"
+  } } });
+  const entries = result.body.entries;
+  for (const key of ["camera", "camera_roll"]) {
+    const config = JSON.parse(entries[key]);
+    for (const [field, value] of Object.entries(config)) {
+      if (/duration|Duration/.test(field)) assert.equal(value, 60, key + "." + field);
+    }
+  }
+  for (const [key, value] of Object.entries(entries)) {
+    if (/duration/i.test(key)) assert.equal(value, "60.0", key);
+  }
+  for (const key of ["camera_roll_preview_enabled", "camera_roll_video_enabled", "camera_roll_video_upload_enabled", "internal_camera_roll_video_upload_enabled", "longer_camera_roll_videos_enabled"]) {
+    assert.equal(entries[key], "true", key);
+  }
+  const gates = JSON.parse(entries.feature_gates);
+  for (const key of ["longer_video", "longer_videos", "video_recording", "video_upload", "camera_roll_video"]) assert.equal(gates[key], "enabled");
+  assert.equal(JSON.parse(entries.camera_roll).enabled, true);
+  assert.equal(entries.can_record_video, "true");
+  assert.equal(entries.can_upload_video, "true");
+});
+
+test("existing video schema keeps codecs, units and unknown fields", () => {
+  const original = {
+    video_config: JSON.stringify({ max_duration: 15, recording_duration: 15, max_duration_ms: 15000,
+      video_codec: "h264", max_upload_bytes: 15000, fps: 15, unknown: { duration: 15 } }),
+    android_camera_video_recording: '{"gold":{"maximum_duration":15000}}'
+  };
+  const entries = run({ url: firebase, payload: { entries: original } }).body.entries;
+  const config = JSON.parse(entries.video_config);
+  assert.equal(config.max_duration, 60);
+  assert.equal(config.recording_duration, 60);
+  assert.equal(config.max_duration_ms, 60000);
+  assert.equal(config.video_codec, "h264");
+  assert.equal(config.max_upload_bytes, 15000);
+  assert.equal(config.fps, 15);
+  assert.deepEqual(config.unknown, { duration: 15 });
+  assert.equal(entries.android_camera_video_recording, original.android_camera_video_recording);
+  assert.equal(run({ url: firebase, payload: { entries: {} } }).body.entries.video_config, undefined);
+});
+
+test("sound and mic flags are enabled, while existing mute/strip flags are disabled", () => {
+  const result = run({ url: firebase, payload: { entries: {
+    camera: JSON.stringify({ microphone_enabled: false, muted: true, audio: { enabled: false, codec: "aac", remove_audio: true } }),
+    camera_roll: JSON.stringify({ preserve_audio: false, strip_audio: "true", sound_enabled: "false", codec: "aac" }),
+    video_config: JSON.stringify({ include_audio: false, mute: true })
+  } } });
+  const entries = result.body.entries;
+  for (const key of ["video_sound_enabled", "microphone_enabled", "camera_microphone_enabled"]) assert.equal(entries[key], "true");
+  const camera = JSON.parse(entries.camera);
+  assert.equal(camera.microphone_enabled, true);
+  assert.equal(camera.muted, false);
+  assert.deepEqual(camera.audio, { enabled: true, codec: "aac", remove_audio: false });
+  const roll = JSON.parse(entries.camera_roll);
+  assert.equal(roll.preserve_audio, true);
+  assert.equal(roll.strip_audio, "false");
+  assert.equal(roll.sound_enabled, "true");
+  assert.equal(roll.codec, "aac");
+  assert.equal(JSON.parse(entries.video_config).include_audio, true);
+  assert.equal(JSON.parse(entries.video_config).mute, false);
+});
+
+test("captions preserve server items, add 20 original templates and do not duplicate on reapply", () => {
+  const originalGroup = { section: "Server", layout: "keep", items: [
+    { overlay_id: "caption:music", source: "remote", caption: { special: "keep" } },
+    { overlay_id: "caption:unknown", caption: { type: "future" } }
+  ] };
+  const result = run({ url: firebase, payload: { entries: {
+    overlay_items: JSON.stringify([originalGroup]),
+    overlay_dynamic_captions: '["future","music"]',
+    overlays_v2_config: '{"unknown":{"keep":true}}'
+  } } });
+  const groups = JSON.parse(result.body.entries.overlay_items);
+  assert.deepEqual(groups[0], originalGroup);
+  const items = groups.flatMap(group => group.items);
+  assert.equal(items.filter(item => item.overlay_id.startsWith("caption:cuong_")).length, 20);
+  assert.equal(new Set(items.map(item => item.overlay_id)).size, items.length);
+  assert.equal(items.filter(item => item.overlay_id === "caption:music").length, 1);
+  const types = JSON.parse(result.body.entries.overlay_dynamic_captions);
+  assert.ok(types.includes("future") && types.includes("poll") && types.includes("weather"));
+  assert.equal(types.filter(type => type === "music").length, 1);
+  assert.deepEqual(JSON.parse(result.body.entries.overlays_v2_config).unknown, { keep: true });
+  const second = run({ url: firebase, payload: result.body });
+  assert.deepEqual(second.body, result.body);
+  assert.ok(second.logs.some(line => line.includes("v2.0.0") && line.includes("captions added=0")));
+});
+
+test("malformed caption lists do not break video configuration or get erased", () => {
+  for (const bad of ["{broken", "{}", "null"]) {
+    const entries = run({ url: firebase, payload: { entries: { overlay_items: bad, overlay_dynamic_captions: bad } } }).body.entries;
+    assert.equal(entries.overlay_items, bad);
+    assert.equal(entries.overlay_dynamic_captions, bad);
+    assert.equal(entries.video_max_duration, "60.0");
+  }
+});
+
+test("rewritten response avoids stale HTTP caches without dropping unrelated headers", () => {
+  const headers = { "Content-Type": "application/json", ETag: "old", "cache-control": "max-age=86400", "Last-Modified": "old", "Content-Length": "10", "X-Signature": "keep", "X-Other": "keep" };
+  const result = run({ responseHeaders: headers });
+  assert.deepEqual(result.output.headers, { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Signature": "keep", "X-Other": "keep" });
+  assert.equal(headers.ETag, "old");
+  assert.deepEqual(run({ status: 500, responseHeaders: headers }).output, {});
+});
+
+test("new module and legacy install URL use the same versioned configuration", () => {
+  const newModule = fs.readFileSync(path.join(root, "locket60s.sgmodule"), "utf8");
+  assert.equal(newModule.replace("/main/locket60s.sgmodule", "/main/locket30s.sgmodule"), moduleText);
+  assert.equal(require("../package.json").version, "2.0.0");
+  assert.ok(newModule.includes("?v=2.0.0"));
 });
 
 test("module URL rules route to the correct handler and exclude unrelated endpoints", () => {

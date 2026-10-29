@@ -4,6 +4,8 @@
   "use strict";
 
   var TAG = "[locket30s-fixed] ";
+  var VERSION = "2.0.0";
+  var VIDEO_SECONDS = 60;
   var RC = /^https:\/\/api\.revenuecat\.com\/v1\/(?:receipts|subscribers\/[^/?#]+)\/?(?:\?[^#]*)?$/i;
   var FIREBASE = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?[^#]*)?$/i;
 
@@ -135,6 +137,128 @@
     entries[key] = JSON.stringify(Object.assign({}, previous, patch));
   }
 
+  function patchMedia(entries, key, defaults) {
+    if (defaults) mergeEntry(entries, key, defaults);
+    if (entries[key] === undefined) return;
+    var config;
+    try {
+      config = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key];
+    } catch (_) { return; }
+    if (!record(config)) return;
+
+    // Only known media entries; never rewrite arbitrary numbers or Android schemas.
+    ["gold_max_duration", "goldMaxDuration", "max_duration", "maxDuration",
+      "video_max_duration", "videoMaxDuration", "video_duration", "videoDuration",
+      "trim_max_duration", "trimMaxDuration", "camera_roll_max_duration",
+      "camera_roll_video_max_duration", "recording_duration", "recording_max_duration",
+      "longer_videos_duration", "longer_video_duration", "maximum_duration", "maximumDuration", "max_length"].forEach(function (name) {
+      if (Object.prototype.hasOwnProperty.call(config, name)) config[name] = VIDEO_SECONDS;
+    });
+    // Milliseconds are changed only for explicitly named fields already in the response.
+    ["max_duration_ms", "video_max_duration_ms", "gold_max_duration_ms",
+      "recording_duration_ms", "trim_max_duration_ms"].forEach(function (name) {
+      if (Object.prototype.hasOwnProperty.call(config, name)) config[name] = VIDEO_SECONDS * 1000;
+    });
+    function audioFlags(object) {
+      ["audio_enabled", "sound_enabled", "microphone_enabled", "include_audio", "preserve_audio",
+        "muted", "mute", "strip_audio", "remove_audio"].forEach(function (name) {
+        if (!Object.prototype.hasOwnProperty.call(object, name)) return;
+        var enabled = !/^(?:muted|mute|strip_audio|remove_audio)$/.test(name);
+        if (typeof object[name] === "boolean") object[name] = enabled;
+        else if (object[name] === "true" || object[name] === "false") object[name] = String(enabled);
+      });
+    }
+    ["enabled", "video_enabled", "video_upload_enabled", "camera_roll_enabled", "recording_enabled"].forEach(function (name) {
+      if (typeof config[name] === "boolean") config[name] = true;
+      else if (config[name] === "true" || config[name] === "false") config[name] = "true";
+    });
+    audioFlags(config);
+    if (record(config.audio)) {
+      audioFlags(config.audio);
+      if (typeof config.audio.enabled === "boolean") config.audio.enabled = true;
+      else if (config.audio.enabled === "true" || config.audio.enabled === "false") config.audio.enabled = "true";
+    }
+    entries[key] = JSON.stringify(config);
+  }
+
+  function arrayEntry(entries, key) {
+    if (entries[key] === undefined) return [];
+    try {
+      var value = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key];
+      if (Array.isArray(value)) return value;
+    } catch (_) { /* Keep the original entry if its schema is unknown. */ }
+    log("firebase: skipped malformed array entry " + key);
+    return null;
+  }
+
+  function captionPatch(entries) {
+    var nativeTypes = ["standard", "link", "review", "poll", "music", "location", "weather",
+      "time", "streak", "star_sign", "color_palette", "locket_count"];
+    var types = arrayEntry(entries, "overlay_dynamic_captions");
+    if (types) {
+      nativeTypes.forEach(function (type) {
+        if (types.indexOf(type) < 0) types.push(type);
+      });
+      entries.overlay_dynamic_captions = JSON.stringify(types);
+    }
+    var groups = arrayEntry(entries, "overlay_items");
+    if (!groups) return 0;
+    var ids = Object.create(null);
+    groups.forEach(function (group) {
+      if (!record(group) || !Array.isArray(group.items)) return;
+      group.items.forEach(function (item) {
+        if (record(item) && typeof item.overlay_id === "string") ids[item.overlay_id] = true;
+      });
+    });
+    var additions = [];
+    function add(item) {
+      if (ids[item.overlay_id]) return;
+      ids[item.overlay_id] = true;
+      additions.push(item);
+    }
+    nativeTypes.forEach(function (type) {
+      add({ overlay_id: "caption:" + type, source: "local", caption: { type: type } });
+    });
+    // Original text-only templates: no external assets, scripts or tracking URLs.
+    [
+      ["hello", "Xin chào ngày mới", "☀️"],
+      ["coffee", "Một chút cà phê", "☕"],
+      ["study", "Đang học bài", "📚"],
+      ["focus", "Giờ tập trung", "🎯"],
+      ["work", "Một ngày làm việc", "💼"],
+      ["break", "Nghỉ một chút nhé", "🍃"],
+      ["food", "Hôm nay ăn gì?", "🍜"],
+      ["music", "Bật bài mình thích", "🎵"],
+      ["rain", "Ngày mưa thật chậm", "🌧️"],
+      ["sunset", "Hẹn với hoàng hôn", "🌇"],
+      ["night", "Chúc bạn ngủ ngon", "🌙"],
+      ["weekend", "Cuối tuần của mình", "🎈"],
+      ["friends", "Có bạn là vui", "🫶"],
+      ["miss", "Gửi bạn một chút nhớ", "💌"],
+      ["happy", "Niềm vui hôm nay", "✨"],
+      ["calm", "Bình yên một chút", "🌿"],
+      ["travel", "Đi tìm một nơi mới", "🧳"],
+      ["gym", "Thêm một chút cố gắng", "💪"],
+      ["birthday", "Một ngày thật đặc biệt", "🎂"],
+      ["memory", "Giữ lại khoảnh khắc này", "📸"]
+    ].forEach(function (template, index) {
+      var palettes = [["#243B55", "#141E30"], ["#6A3093", "#A044FF"], ["#134E5E", "#237A57"]];
+      add({
+        overlay_id: "caption:cuong_" + template[0],
+        source: "remote",
+        caption: {
+          type: "static_content", text: template[1],
+          icon: { type: "emoji", data: template[2] },
+          background: { colors: palettes[index % palettes.length] },
+          text_color: "#FFFFFF", max_lines: 1
+        }
+      });
+    });
+    if (additions.length) groups.push({ section: "Ghi chú mở rộng · 60s", items: additions });
+    entries.overlay_items = JSON.stringify(groups);
+    return additions.length;
+  }
+
   function firebasePatch(payload) {
     if (!record(payload.entries)) {
       log("firebase: skipped missing entries (possibly NO_CHANGE)");
@@ -144,41 +268,88 @@
     mergeEntry(entries, "feature_gates", {
       camera_roll: "enabled",
       longer_video: "enabled",
+      longer_videos: "enabled",
+      video_recording: "enabled",
+      video_upload: "enabled",
+      camera_roll_video: "enabled",
       video: "enabled",
       long_captions: "enabled",
       profile_badge: "enabled"
     });
-    mergeEntry(entries, "camera", {
-      gold_max_duration: 30,
-      goldMaxDuration: 30,
-      max_duration: 30,
-      maxDuration: 30
+    patchMedia(entries, "camera", {
+      gold_max_duration: VIDEO_SECONDS,
+      goldMaxDuration: VIDEO_SECONDS,
+      max_duration: VIDEO_SECONDS,
+      maxDuration: VIDEO_SECONDS,
+      video_max_duration: VIDEO_SECONDS,
+      videoMaxDuration: VIDEO_SECONDS
     });
-    mergeEntry(entries, "camera_roll", {
-      gold_max_duration: 30,
-      goldMaxDuration: 30,
-      video_max_duration: 30,
-      videoMaxDuration: 30,
-      max_duration: 30,
-      maxDuration: 30,
-      trim_max_duration: 30,
-      trimMaxDuration: 30
+    patchMedia(entries, "camera_roll", {
+      gold_max_duration: VIDEO_SECONDS,
+      goldMaxDuration: VIDEO_SECONDS,
+      video_max_duration: VIDEO_SECONDS,
+      videoMaxDuration: VIDEO_SECONDS,
+      max_duration: VIDEO_SECONDS,
+      maxDuration: VIDEO_SECONDS,
+      trim_max_duration: VIDEO_SECONDS,
+      trimMaxDuration: VIDEO_SECONDS,
+      camera_roll_max_duration: VIDEO_SECONDS,
+      camera_roll_video_max_duration: VIDEO_SECONDS
     });
+    // Do not invent a video_config schema when the server does not provide one.
+    patchMedia(entries, "video_config");
     Object.assign(entries, {
+      camera_roll_preview_enabled: "true",
+      camera_roll_enabled: "true",
       camera_roll_video_enabled: "true",
       camera_roll_video_upload_enabled: "true",
+      internal_camera_roll_video_upload_enabled: "true",
       longer_camera_roll_videos_enabled: "true",
-      camera_roll_video_max_duration: "30.0",
-      camera_roll_max_duration: "30.0",
-      max_video_duration: "30.0",
-      video_max_duration: "30.0",
-      video_trim_max_duration: "30.0",
-      gold_max_duration: "30.0",
+      longer_video_enabled: "true",
+      longer_videos_enabled: "true",
+      video_sound_enabled: "true",
+      microphone_enabled: "true",
+      camera_microphone_enabled: "true",
+      captions_enabled: "true",
+      overlay_navigator_enabled: "true",
+      music_caption_enabled: "true",
+      music_caption_song_preview_enabled: "true",
+      link_caption_link_enabled: "true",
       profile_badge_visible: "true"
     });
+    ["camera_roll_video_max_duration", "camera_roll_max_duration", "camera_roll_duration",
+      "max_video_duration", "video_max_duration", "video_trim_max_duration", "trim_max_duration",
+      "gold_max_duration", "goldMaxDuration", "longer_video_duration", "longer_videos_duration",
+      "longer_video_max_duration", "longer_videos_max_duration", "video_duration",
+      "video_record_max_duration", "video_record_duration", "max_recorded_duration",
+      "recording_max_duration", "recording_duration", "max_video_record_duration",
+      "max_video_duration_seconds", "video_upload_max_duration", "gold_max_video_length_seconds",
+      "gold_video_length_limit", "longerVideoDuration", "video_maximum_duration",
+      "camera_video_maximum_duration", "video_recording_maximum_duration"].forEach(function (key) {
+      entries[key] = VIDEO_SECONDS.toFixed(1);
+    });
+    ["video", "longer_video", "longerVideo", "can_record_video", "enable_video_recording",
+      "can_upload_video", "longerVideosEnabled"].forEach(function (key) {
+      if (entries[key] !== undefined && /^(?:true|false)$/.test(String(entries[key]))) entries[key] = "true";
+    });
+    mergeEntry(entries, "overlays_v2_config", { suggestions_enabled: true });
+    var added = captionPatch(entries);
     if (payload.state === "NO_CHANGE") payload.state = "UPDATE";
-    log("firebase: local Gold/video configuration patched");
+    log("firebase: v" + VERSION + " config target=" + VIDEO_SECONDS + "s; captions added=" + added);
     return true;
+  }
+
+  function rewrittenResponse(payload, response) {
+    var result = { body: JSON.stringify(payload) };
+    if (record(response.headers)) {
+      var headers = Object.assign({}, response.headers);
+      Object.keys(headers).forEach(function (key) {
+        if (/^(?:etag|last-modified|content-length|cache-control)$/i.test(key)) delete headers[key];
+      });
+      headers["Cache-Control"] = "no-store";
+      result.headers = headers;
+    }
+    return result;
   }
 
   function main() {
@@ -202,7 +373,7 @@
       return {};
     }
     if (!(isRC ? goldPatch(payload, $request) : firebasePatch(payload))) return {};
-    return { body: JSON.stringify(payload) };
+    return rewrittenResponse(payload, $response);
   }
 
   var result = {};

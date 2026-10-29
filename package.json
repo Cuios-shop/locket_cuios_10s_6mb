@@ -1,6 +1,6 @@
 {
   "name": "locket30s-fixed",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Module thử nghiệm cho Locket trên Surge/Shadowrocket, có kiểm thử offline",
   "scripts": {
