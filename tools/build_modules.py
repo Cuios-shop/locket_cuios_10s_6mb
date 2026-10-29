@@ -1,43 +1,39 @@
-"""Generate complete, mutually exclusive Shadowrocket module variants."""
+"""Publish a content-addressed standalone runtime and complete module variants."""
 from pathlib import Path
+import hashlib,json
 
-root = Path(__file__).resolve().parents[1]
-version = "3.0.0"
-base = "https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/"
-variants = {
-    "locket60s_amthanh_mic.sgmodule": "aura-frame",
-    "locket60s.sgmodule": "aura-frame",
-    "locket30s.sgmodule": "aura-frame",
-    "locket60s-widget.sgmodule": "aura-frame",
-    "locket60s-no-widget.sgmodule": "",
-    "locket60s-gold.sgmodule": "gold-frame",
-    "locket60s-rose.sgmodule": "rose-frame",
-    "locket60s-refresh.sgmodule": "aura-frame",
-}
-rc = r"^https://api\.revenuecat\.com/v1/(?:receipts|subscribers/[^/?#]+)/?(?:\?[^#]*)?$"
-firebase = r"^https://firebaseremoteconfig\.googleapis\.com/v1/projects/locket-4252a/namespaces/firebase:fetch(?:\?[^#]*)?$"
-request = r"^https://(?:api\.revenuecat\.com/v1/(?:receipts|subscribers/[^/?#]+)/?(?:\?[^#]*)?$|firebaseremoteconfig\.googleapis\.com/v1/projects/locket-4252a/namespaces/firebase:fetch(?:\?[^#]*)?$)"
-for name, argument in variants.items():
-    script = f"script-path={base}scripts/locket.js?v={version}"
-    refresh = name == "locket60s-refresh.sgmodule"
-    if refresh:
-        script = "script-path=https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/9bb85e7170fab5ffd8160889c934ddb2cc5ec51b/scripts/locket.js"
-    option = f", argument={argument}" if argument else ""
-    text = f"""#!name=Cuios • Locket 60s / 100 MB • {argument or 'no-widget'} • v{version}
-#!desc=Mic & âm thanh kế thừa bản ổn định; cấu hình nhập 60s/100 MB, 4 ghi chú Cuios + 50 mẫu mới. Chỉ bật một module Locket.
+root=Path(__file__).resolve().parents[1]
+version=json.loads((root/'package.json').read_text())['version']
+base='https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/'
+source=(root/'scripts/locket.js').read_bytes()
+digest=hashlib.sha256(source).hexdigest()
+relative='scripts/releases/locket-v'+version+'-'+digest[:12]+'.js'
+release=root/relative
+release.parent.mkdir(exist_ok=True)
+release.write_bytes(source)
+(root/'release.json').write_text(json.dumps({'version':version,'runtime':relative,'sha256':digest},indent=2)+'\n')
+hosts=r'(?:api\.revenuecat\.com|api\.rc-backup\.com|api-production\.8-lives-cat\.io)'
+rc=r'^https://'+hosts+r'/(?:v1|v2)/(?:receipts|subscribers)(?:[/?]|$)'
+fb=r'^https://firebaseremoteconfig\.googleapis\.com/v1/projects/(?:locket-4252a|869942740286)/namespaces/firebase:fetch/?(?:\?[^#]*)?$'
+fb_probe=r'firebaseremoteconfig\.googleapis\.com/v1/projects/[^/?#]+/namespaces/[^/?#]+:fetch/?(?:\?[^#]*)?$'
+request=r'^https://(?:'+hosts+r'/(?:v1|v2)/(?:receipts|subscribers)(?:[/?]|$)|'+fb_probe+')'
+variants={'locket_cuios_stable.sgmodule':'aura-frame','locket_cuios_no_widget.sgmodule':''}
+for name,argument in variants.items():
+    option=', argument='+argument if argument else ''
+    text=fr"""#!name=Cuios • Profile thống nhất • v{version}{' • Giữ khung' if not argument else ''}
+#!desc=60s/100 MiB, mic, 54 ghi chú; có trang chẩn đoán cục bộ. Chỉ bật một module Locket. Xem README về giới hạn native/cache.
 #!author=Cuongqtx11 / Cuios
 #!moduleUrl={base}{name}
 
 [Script]
-cuios_cache = type=http-request, pattern={request}, {script}, timeout=10
-cuios_gold = type=http-response, pattern={rc}, {script}, requires-body=true, max-size=1048576, timeout=10
-cuios_config = type=http-response, pattern={firebase}, {script}{option}, requires-body=true, max-size=1048576, timeout=10
+cuios4_status = type=http-request, pattern=^http://cuios-status\.invalid/(?:status|report\.json)(?:\?[^#]*)?$, script-path={base}{relative}, timeout=10
+cuios4_https = type=http-request, pattern=^https://(?:api\.revenuecat\.com|firebaseremoteconfig\.googleapis\.com)/cuios-check(?:\?[^#]*)?$, script-path={base}{relative}, timeout=10
+cuios4_request = type=http-request, pattern={request}, script-path={base}{relative}, timeout=10
+cuios4_revenuecat = type=http-response, pattern={rc}, script-path={base}{relative}, requires-body=true, max-size=1048576, timeout=10
+cuios4_firebase = type=http-response, pattern={fb}, script-path={base}{relative}{option}, requires-body=true, max-size=1048576, timeout=10
 
 [MITM]
-hostname = %APPEND% api.revenuecat.com, firebaseremoteconfig.googleapis.com
+hostname = %APPEND% api.revenuecat.com, api.rc-backup.com, api-production.8-lives-cat.io, firebaseremoteconfig.googleapis.com
 """
-    if refresh:
-        text = text.replace(f"• v{version}", f"• Refresh r1 • v{version}")
-        text = text.replace("cuios_cache =", "cuios_refresh_cache =").replace("cuios_gold =", "cuios_refresh_gold =").replace("cuios_config =", "cuios_refresh_config =")
-    (root / name).write_text(text)
-print(f"Built {len(variants)} module entrypoints")
+    (root/name).write_text(text)
+print('Published runtime',relative,'and',len(variants),'module variants')

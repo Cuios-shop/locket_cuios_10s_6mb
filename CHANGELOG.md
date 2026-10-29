@@ -1,13 +1,12 @@
 # Thay đổi
 
-## 3.0.0 — repo locket60s_amthanh_mic
+## 4.0.0 — profile thống nhất, chẩn đoán và xử lý revision
 
-- Nhân bản từ locket30s-fixed tại 6dd3f5d; giữ repo cũ nguyên trạng.
-- Cấu hình nhập/cắt/upload 60 giây và 100 MiB, gồm các nhóm media lồng nhau được hỗ trợ; giữ cờ mic/âm thanh.
-- Thay menu ghi chú bằng 4 mẫu thương hiệu Cuios ở đầu và 50 mẫu mới, 5 nhóm; đồng bộ đăng ký ID.
-- 11 ảnh nền tự thiết kế, màu gradient dự phòng và ảnh preview đầy đủ.
-- 3 viền widget gốc thử nghiệm: Aura, Gold, Rose; module riêng để giữ nguyên khung nếu cần.
-- 29 kiểm thử offline; các URL runtime chỉ dùng repo mới.
-- Chưa xác nhận nhập/gửi đủ 60 giây/100 MiB hoặc hiển thị khung mới trên iPhone thật.
+- Nhận diện bundle ID, thêm host dự phòng RevenueCat chính thức, chẩn đoán route chưa hỗ trợ.
+- ETag theo nội dung Firebase đã sửa, giữ metadata và state UPDATE; không tạo/replay cấu hình thiếu entries.
+- Một runtime có tên chứa hash cho toàn bộ rule; một profile 60s/100 MiB/54 ghi chú và một variant giữ khung server.
+- Trang trạng thái/report cục bộ, lưu riêng từng service; redaction, lỗi storage và freshness rõ ràng.
+- Giữ nội dung mic/media/54 ghi chú/nền/khung của nhánh trước; 39 kiểm thử offline.
+- Chưa xác nhận ổn định trên iPhone. Cần báo cáo từ thiết bị để xác định lỗi thực tế còn lại.
 
-Lịch sử bản ổn định 2.1 được giữ trong Git và repo gốc https://github.com/Cuongqtx11/locket30s-fixed.
+Các repo nguồn giữ nguyên. Tên repo stable không phải chứng nhận mọi chức năng native đã hoạt động.

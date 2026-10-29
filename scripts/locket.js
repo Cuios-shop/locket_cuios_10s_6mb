@@ -1,23 +1,30 @@
-/* global $request, $response, $done, $argument */
-// Standalone Surge/Shadowrocket script. No network calls or persistent user data.
+/* global $request, $response, $done, $argument, $persistentStore */
+// One standalone runtime. No outbound requests; only sanitized diagnostics are persisted.
 (function () {
   "use strict";
 
-  var TAG = "[locket60s_amthanh_mic] ";
-  var VERSION = "3.0.0";
+  var TAG = "[locket_cuios_stable] ";
+  var VERSION = "4.0.0";
+  var STATE_KEY = "CUIOS_STABLE_V4_DIAGNOSTICS";
+  var WARNINGS = [];
+  var CURRENT_SERVICE = "runtime";
   var VIDEO_SECONDS = 60;
   var VIDEO_BYTES = 100 * 1024 * 1024;
-  var ASSET_BASE = "https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/assets/";
+  var ASSET_BASE = "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/assets/";
   // BEGIN GENERATED CAPTION CATALOGUE
   var CAPTIONS = [{"id":"brand","section":"Cuios • Bản quyền","background":"brand","items":[["certificate","mua chứng chỉ Cuios.shop","👑"],["copyright","Bản quyền Cuios","✨"],["cun","Cưn🍤","🍤"],["tom","tom11th5","💛"]]},{"id":"love","section":"Tình yêu","background":"love","items":[["choose","Tim tớ chọn cậu rồi","💗"],["withyou","Đi đâu cũng muốn có cậu","🫶"],["soft","Gặp cậu là ngày đẹp","🌷"],["little","Thương cậu thêm một chút","💕"],["home","Bên cậu là thấy nhà","🏡"],["hug","Gửi cậu một cái ôm","🤍"],["miss","Nhớ cậu, không cần lý do","💌"],["smile","Cậu cười là tớ thua","🥰"],["wait","Chừa một chỗ cạnh tớ nhé","💞"],["simple","Thích cậu, thế thôi","💘"]]},{"id":"joy","section":"Vui vẻ","background":"joy","items":[["enough","Hôm nay vui vừa đủ","🌞"],["vitamin","Nạp một chút vitamin cười","🍊"],["happy","Đang bận yêu đời","🌈"],["broadcast","Niềm vui đang phát sóng","📻"],["sun","Mang nắng về nhà","☀️"],["luck","May mắn ghé chơi rồi","🍀"],["photo","Chụp vội một ngày xinh","📸"],["weekend","Cuối tuần nằm trong tim","🎈"],["save","Một ngày đáng lưu lại","✨"],["laugh","Cười lên, ảnh đang đẹp","😆"]]},{"id":"mood","section":"Cảm xúc","background":"mood","items":[["rain","Hôm nay lòng hơi mưa","🌧️"],["quiet","Cho tớ yên một chút","🌙"],["thought","Có vài điều chưa nói","💭"],["slow","Đang học cách chậm lại","🍃"],["hug","Một cái ôm là đủ","🫂"],["tired","Hết pin, cần được thương","🪫"],["okay","Không ổn cũng không sao","🤍"],["hope","Ngày mai mình thử lại","🌅"],["memory","Có người nằm trong ký ức","🎞️"],["feeling","Chẳng biết gọi tên cảm xúc","🫧"]]},{"id":"tease","section":"Trêu đùa","background":"tease","items":[["cute","Xinh thế này ai chịu nổi","😎"],["seen","Xem rồi thì nhớ tớ đi","👀"],["crush","Đẹp vậy mà vẫn độc thân","😌"],["heart","Lỡ xem là phải thả tim","😏"],["busy","Bận đáng yêu, lát nhắn","💅"],["snack","Không giận, chỉ thiếu trà sữa","🧋"],["signal","Phát tín hiệu: nhớ bạn","📡"],["sleep","Online đó, nhưng buồn ngủ","😴"],["model","Camera thường, người phi thường","🤳"],["notice","Thông báo: cần được cưng","📣"]]},{"id":"gentle","section":"Dịu dàng","background":"gentle","items":[["breathe","Hít thở rồi mình đi tiếp","🌿"],["coffee","Cà phê ấm, lòng nhẹ hơn","☕"],["small","Gom niềm vui nhỏ mỗi ngày","🪴"],["enough","Mình đã cố gắng đủ rồi","🌼"],["kind","Dịu dàng với mình một chút","🕊️"],["now","Ở đây, ngay lúc này","🍵"],["sky","Ngước lên, trời vẫn xanh","☁️"],["rest","Nghỉ một nhịp cũng được","🛋️"],["bloom","Mỗi người một mùa nở hoa","🌸"],["night","Ngủ ngon, mai mình lại xinh","🌙"]]}];
   // END GENERATED CAPTION CATALOGUE
-  var RC = /^https:\/\/api\.revenuecat\.com\/v1\/(?:receipts|subscribers\/[^/?#]+)\/?(?:\?[^#]*)?$/i;
-  var FIREBASE = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?[^#]*)?$/i;
+  var RC = /^https:\/\/(?:api\.revenuecat\.com|api\.rc-backup\.com|api-production\.8-lives-cat\.io)\/v1\/(?:receipts|subscribers\/[^/?#]+)\/?(?:\?[^#]*)?$/i;
+  var RC_PROBE = /^https:\/\/(?:api\.revenuecat\.com|api\.rc-backup\.com|api-production\.8-lives-cat\.io)\/(?:v1|v2)\/(?:receipts|subscribers)(?:[/?]|$)/i;
+  var FIREBASE = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/(?:locket-4252a|869942740286)\/namespaces\/firebase:fetch\/?(?:\?[^#]*)?$/i;
+  var FIREBASE_PROBE = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/[^/?#]+\/namespaces\/[^/?#]+:fetch\/?(?:\?[^#]*)?$/i;
+  var STATUS = /^http:\/\/cuios-status\.invalid\/(status|report\.json)(?:\?[^#]*)?$/i;
+  var HTTPS_CHECK = /^https:\/\/(api\.revenuecat\.com|firebaseremoteconfig\.googleapis\.com)\/cuios-check(?:\?[^#]*)?$/i;
 
   function log(message) {
     // Deliberately omit URLs, headers, IDs and response bodies from logs.
     if (typeof console !== "undefined" && typeof console.log === "function") {
-      console.log(TAG + message);
+      try { console.log(TAG + message); } catch (_) { /* Logging must not abort a request. */ }
     }
   }
 
@@ -33,8 +40,103 @@
     return "";
   }
 
+  function readDiagnostics() {
+    var state = { schema: 1, version: VERSION, services: {} };
+    try {
+      if (typeof $persistentStore !== "undefined") {
+        ["firebase", "revenuecat", "unidentified_revenuecat", "runtime", "https_revenuecat", "https_firebase"].forEach(function (service) {
+          try {
+            var parsed = JSON.parse($persistentStore.read(STATE_KEY + "_" + service) || "null");
+            if (record(parsed) && parsed.schema === 1 && record(parsed.data) &&
+                typeof parsed.data.at === "number" && isFinite(parsed.data.at) && parsed.data.at >= 0 && parsed.data.at < 8e15) {
+              state.services[service] = parsed.data;
+            }
+          } catch (_) { /* One corrupt service record must not hide other observations. */ }
+        });
+      }
+    } catch (_) { /* Diagnostics are optional; never block app traffic. */ }
+    return state;
+  }
+
+  function event(service, values) {
+    try {
+      var state = readDiagnostics();
+      var data = Object.assign({}, state.services[service] || {}, values, { at: Date.now(), version: VERSION });
+      // Separate service keys prevent parallel RC/Firebase scripts from erasing each other's status.
+      if (typeof $persistentStore !== "undefined" &&
+          $persistentStore.write(JSON.stringify({ schema: 1, data: data }), STATE_KEY + "_" + service) === false) log("diagnostics: storage write failed");
+    } catch (_) { /* A full/unsupported store must not change network behavior. */ }
+  }
+
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function statusPage(request, json) {
+    var method = String(request.method || "GET").toUpperCase();
+    if (method !== "GET" && method !== "HEAD") {
+      return { response: { status: 405, headers: { Allow: "GET, HEAD" }, body: "Method not allowed" } };
+    }
+    var storageWorking = false;
+    try {
+      if (typeof $persistentStore !== "undefined") {
+        var probe = String(Date.now());
+        storageWorking = $persistentStore.write(probe, STATE_KEY + "_probe") !== false &&
+          $persistentStore.read(STATE_KEY + "_probe") === probe;
+      }
+    } catch (_) { /* Show that observation storage is unavailable instead of implying no traffic. */ }
+    var state = readDiagnostics();
+    var report = {
+      runtime: VERSION,
+      storageAvailable: storageWorking,
+      recipe: { seconds: VIDEO_SECONDS, uploadBytes: VIDEO_BYTES, captions: 54 },
+      observed: state.services,
+      deviceFeaturesVerified: false,
+      note: "Đây là request/response script đã quan sát, không phải xác nhận Locket đã activate hoặc mic/video đã hoạt động."
+    };
+    var headers = { "Content-Type": json ? "application/json; charset=utf-8" : "text/html; charset=utf-8", "Cache-Control": "no-store" };
+    var body;
+    if (json) body = JSON.stringify(report, null, 2);
+    else {
+      function card(name, service) {
+        var data = state.services[service];
+        var stale = data && Date.now() - data.at > 300000;
+        var description = !data ? "Chưa quan sát thấy request qua script này."
+          : data.action === "patched" ? "Đã sửa response gửi về app. Chưa xác nhận app đã áp dụng."
+          : data.action === "partial" ? "Đã sửa một phần; có trường không khớp schema."
+          : data.action === "active_gold_preserved" ? "Response có Gold đang hoạt động; giữ nguyên."
+          : data.action === "https_hook_seen" ? "Hook HTTPS đã chạy từ trình duyệt. Chưa chứng minh app Locket gửi request."
+          : data.action === "request_seen" ? "Đã thấy request; chưa có kết quả response mới."
+          : "Cần kiểm tra: " + String(data.action || "unknown");
+        return "<section><h2>" + name + "</h2>" + (stale ? "<p><strong>Đây là quan sát cũ hơn 5 phút, chưa chứng minh app vừa tải lại cấu hình.</strong></p>" : "") + "<p>" + escapeHTML(description) + "</p>" +
+          (data ? "<small>Lần cuối: " + escapeHTML(new Date(data.at).toISOString()) + "</small>" : "") + "</section>";
+      }
+      body = "<!doctype html><html lang=vi><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Cuios · Trạng thái</title>" +
+        "<style>body{font:16px system-ui;background:#101522;color:#edf1ff;max-width:780px;margin:auto;padding:24px}section{background:#1d2639;border:1px solid #46516b;border-radius:16px;padding:18px;margin:16px 0}h1{font-size:27px}h2{font-size:20px}p{line-height:1.6}a{color:#b6c8ff}small{color:#b9c3d9}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}strong{color:#ffd693}</style>" +
+        "<h1>Cuios · Kiểm tra kết nối</h1><p>Script đang chạy: <strong>v" + VERSION + "</strong>. Mục tiêu: 60s · 100 MiB · 54 ghi chú.</p>" +
+        (storageWorking ? "" : "<section><strong>Kho chẩn đoán không ghi/đọc được. Thiếu trạng thái ở đây chưa chứng minh app không có request; cần xem log script.</strong></section>") +
+        card("RevenueCat", "revenuecat") + card("Firebase Remote Config", "firebase") +
+        "<section><h2>Kiểm tra HTTPS từ Safari</h2><p><a href='https://api.revenuecat.com/cuios-check'>Kiểm tra RevenueCat</a> · <a href='https://firebaseremoteconfig.googleapis.com/cuios-check'>Kiểm tra Firebase</a></p><p>Chỉ trang có chữ Cuios và v4.0.0 là response kiểm tra từ script. Trang lỗi Google/404 không phải kết quả thành công.</p></section>" +
+        card("HTTPS RevenueCat qua trình duyệt", "https_revenuecat") + card("HTTPS Firebase qua trình duyệt", "https_firebase") +
+        "<section><h2>Đọc kết quả</h2><p>Nếu chưa có request Firebase, đổi module chưa đủ để Locket tải cấu hình mới. Nếu response đã được sửa mà app vẫn cũ, cần kiểm tra activate/schema phía app. Trang này không tự xoá cache Locket hoặc cấp quyền mic.</p><p>Chỉ bật một module Locket. Bật proxy trước, mở Locket, rồi mở lại trang này.</p></section>" +
+        "<p><a href='/status?reload=1'>Tải lại trạng thái</a> · <a href='/report.json'>Xem báo cáo chẩn đoán</a></p><details><summary>Chi tiết có thể gửi để kiểm tra</summary><pre>" + escapeHTML(JSON.stringify(report, null, 2)) + "</pre></details></html>";
+      headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'";
+      headers["X-Content-Type-Options"] = "nosniff";
+    }
+    return { response: { status: 200, headers: headers, body: method === "HEAD" ? "" : body } };
+  }
+
+  function identity(request) {
+    var bundle = header(request.headers, "x-client-bundle-id") || header(request.headers, "x-ios-bundle-identifier");
+    if (bundle) return /^com\.locket\.locket(?:\.[a-z0-9_.-]+)?$/i.test(bundle) ? "bundle" : "other_app";
+    return /locket/i.test(header(request.headers, "user-agent")) ? "user_agent" : "unknown";
+  }
+
   function locketRequest(request) {
-    return /locket/i.test(header(request.headers, "user-agent"));
+    var kind = identity(request);
+    return kind === "bundle" || kind === "user_agent";
   }
 
   function locketSubscriber(subscriber) {
@@ -55,7 +157,11 @@
 
   function requestPatch(request, isRC) {
     // RevenueCat is shared by other apps. Only alter identifiable Locket requests.
-    if (isRC && !locketRequest(request)) return {};
+    if (isRC && !locketRequest(request)) {
+      event("unidentified_revenuecat", { action: "identity_missing_or_other_app", requestAt: Date.now() });
+      return {};
+    }
+    event(CURRENT_SERVICE, { action: "request_seen", requestAt: Date.now(), identity: identity(request) });
     var headers = Object.assign({}, request.headers || {});
     var changed = false;
     Object.keys(headers).forEach(function (key) {
@@ -71,16 +177,19 @@
   function goldPatch(payload, request) {
     if (!record(payload.subscriber)) {
       log("revenuecat: skipped unexpected subscriber schema");
+      if (locketRequest(request)) event("revenuecat", { action: "unexpected_subscriber_schema" });
       return false;
     }
     var subscriber = payload.subscriber;
-    if (!locketRequest(request) && !locketSubscriber(subscriber)) {
+    if (identity(request) === "other_app" || (!locketRequest(request) && !locketSubscriber(subscriber))) {
       log("revenuecat: skipped unrecognized app");
+      event("unidentified_revenuecat", { action: "identity_missing_or_other_app", responseAt: Date.now() });
       return false;
     }
     if ((subscriber.entitlements != null && !record(subscriber.entitlements)) ||
         (subscriber.subscriptions != null && !record(subscriber.subscriptions))) {
       log("revenuecat: skipped unexpected entitlement schema");
+      event("revenuecat", { action: "unexpected_entitlement_schema" });
       return false;
     }
     var entitlements = subscriber.entitlements || {};
@@ -92,6 +201,7 @@
         (oldGold.expires_date === null || Date.parse(oldGold.expires_date) > Date.now()) &&
         (currentSubscription.expires_date === null || Date.parse(currentSubscription.expires_date) > Date.now())) {
       log("revenuecat: existing active Gold preserved");
+      event("revenuecat", { action: "active_gold_preserved", responseAt: Date.now() });
       return false;
     }
     var product = typeof currentProduct === "string" && /^locket_/i.test(currentProduct)
@@ -121,6 +231,7 @@
       grace_period_expires_date: null
     });
     log("revenuecat: local Gold response patched");
+    event("revenuecat", { action: "patched", responseAt: Date.now(), identity: locketRequest(request) ? identity(request) : "payload_product" });
     return true;
   }
 
@@ -131,10 +242,12 @@
         previous = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key];
       } catch (_) {
         log("firebase: skipped malformed nested entry " + key);
+        WARNINGS.push(key);
         return false;
       }
       if (!record(previous)) {
         log("firebase: skipped unexpected nested entry " + key);
+        WARNINGS.push(key);
         return false;
       }
     }
@@ -190,6 +303,35 @@
     }
     inspect(library, "camera_roll", 0);
     log("diag v" + VERSION + " input library limits " + JSON.stringify(report));
+    var schema = {}, flags = {};
+    ["camera", "camera_roll", "video_config", "feature_gates", "overlay_items", "overlay_dynamic_captions", "widget_frame_event"].forEach(function (key) {
+      schema[key] = shape(entries[key]);
+    });
+    ["video_sound_enabled", "microphone_enabled", "camera_microphone_enabled", "mh_mic_enabled_v16",
+      "camera_roll_video_enabled", "camera_roll_video_upload_enabled", "internal_camera_roll_video_upload_enabled"].forEach(function (key) {
+      flags[key] = flag(entries[key]);
+    });
+    var mediaFields = [];
+    function fields(object, path, depth) {
+      if (!record(object) || depth > 3 || mediaFields.length >= 60) return;
+      Object.keys(object).forEach(function (key) {
+        if (mediaFields.length >= 60 || !/^[a-zA-Z][a-zA-Z0-9_]{0,47}$/.test(key) ||
+            /user|uid|token|auth|phone|mail|receipt|private|password|secret/i.test(key)) return;
+        if (/audio|mic|sound|video|camera|record|duration|trim|size|length/i.test(key)) {
+          var value = object[key];
+          mediaFields.push({ path: path, field: key, type: shape(value), flag: flag(value) });
+        }
+      });
+      ["video", "upload", "recording", "trim", "limits", "free", "gold", "default", "audio"].forEach(function (key) {
+        fields(object[key], path + "." + key, depth + 1);
+      });
+    }
+    ["camera", "camera_roll", "video_config"].forEach(function (key) {
+      var value;
+      try { value = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key]; } catch (_) { value = null; }
+      fields(value, key, 0);
+    });
+    event("firebase", { inputSchema: schema, inputFlags: flags, inputLibraryLimits: report, inputMediaFields: mediaFields });
   }
 
   function patchMedia(entries, key, defaults) {
@@ -198,8 +340,8 @@
     var config;
     try {
       config = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key];
-    } catch (_) { return; }
-    if (!record(config)) return;
+    } catch (_) { if (WARNINGS.indexOf(key) < 0) WARNINGS.push(key); return; }
+    if (!record(config)) { if (WARNINGS.indexOf(key) < 0) WARNINGS.push(key); return; }
 
     // Compatibility defaults; these do not add native capture/picker implementations.
     var switches = key === "camera" ? ["microphone_enabled", "sound_enabled"]
@@ -323,6 +465,11 @@
   function firebasePatch(payload) {
     if (!record(payload.entries)) {
       log("firebase: skipped missing entries (possibly NO_CHANGE)");
+      event("firebase", { action: "no_entries", responseAt: Date.now(), serverState: payload.state === "NO_CHANGE" ? "NO_CHANGE" : "missing_or_other" });
+      return false;
+    }
+    if (payload.state !== undefined && payload.state !== "UPDATE" && payload.state !== "NO_CHANGE") {
+      event("firebase", { action: "unsupported_server_state", responseAt: Date.now() });
       return false;
     }
     var entries = payload.entries;
@@ -413,46 +560,97 @@
     mergeEntry(entries, "overlays_v2_config", { suggestions_enabled: true });
     var added = captionPatch(entries);
     var widget = widgetPatch(entries);
-    if (payload.state === "NO_CHANGE") payload.state = "UPDATE";
+    payload.state = "UPDATE";
     log("firebase: v" + VERSION + " config target=" + VIDEO_SECONDS + "s; upload-bytes=" + VIDEO_BYTES + "; captions=" + added + "; widget=" + widget);
+    event("firebase", { action: WARNINGS.length ? "partial" : "patched", responseAt: Date.now(), warnings: WARNINGS,
+      sentRecipe: VERSION, sentSeconds: VIDEO_SECONDS, sentUploadBytes: VIDEO_BYTES, sentCaptions: added, widget: widget });
     return true;
   }
 
-  function rewrittenResponse(payload, response) {
-    var result = { body: JSON.stringify(payload) };
-    if (record(response.headers)) {
-      var headers = Object.assign({}, response.headers);
-      Object.keys(headers).forEach(function (key) {
-        if (/^(?:etag|last-modified|content-length|cache-control)$/i.test(key)) delete headers[key];
-      });
-      headers["Cache-Control"] = "no-store";
-      result.headers = headers;
+  function configRevision(payload) {
+    // An HTTP cache validator, not a cryptographic signature or an entitlement proof.
+    function canonical(value) {
+      if (Array.isArray(value)) return value.map(canonical);
+      if (!record(value)) return value;
+      var ordered = {};
+      Object.keys(value).sort().forEach(function (key) { ordered[key] = canonical(value[key]); });
+      return ordered;
     }
+    // Include rollout/personalization metadata as well as entries so those updates aren't masked.
+    var text = JSON.stringify(canonical(payload)), hash = 2166136261;
+    for (var i = 0; i < text.length; i++) {
+      hash ^= text.charCodeAt(i);
+      hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+      hash >>>= 0;
+    }
+    return '"cuios-' + VERSION + "-" + hash.toString(16) + "-" + text.length.toString(16) + '"';
+  }
+
+  function rewrittenResponse(payload, response, isFirebase) {
+    var result = { body: JSON.stringify(payload) };
+    var headers = record(response.headers) ? Object.assign({}, response.headers) : {};
+    Object.keys(headers).forEach(function (key) {
+      if (/^(?:etag|last-modified|content-length|cache-control)$/i.test(key)) delete headers[key];
+    });
+    headers["Cache-Control"] = "no-store";
+    if (isFirebase) {
+      headers.etag = configRevision(payload);
+      event("firebase", { sentETag: headers.etag });
+    }
+    result.headers = headers;
     return result;
   }
 
   function main() {
     if (typeof $request === "undefined") return {};
     var url = String($request.url || "");
+    var statusMatch = STATUS.exec(url);
+    if (statusMatch && typeof $response === "undefined") return statusPage($request, statusMatch[1] === "report.json");
+    var check = HTTPS_CHECK.exec(url);
+    if (check && typeof $response === "undefined") {
+      var service = check[1].toLowerCase() === "api.revenuecat.com" ? "https_revenuecat" : "https_firebase";
+      event(service, { action: "https_hook_seen" });
+      return { response: { status: 200, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'" },
+        body: "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><h1>Cuios · HTTPS check v" + VERSION + "</h1><p>Script đã nhận request HTTPS kiểm tra từ trình duyệt qua host này. Đây chưa phải bằng chứng Locket gửi request hoặc tính năng native hoạt động.</p><p><a href='http://cuios-status.invalid/status'>Quay lại trang trạng thái</a></p>" } };
+    }
     var isRC = RC.test(url);
-    if (!isRC && !FIREBASE.test(url)) return {};
+    var isFirebase = FIREBASE.test(url);
+    if (!isRC && !isFirebase) {
+      if (RC_PROBE.test(url) && locketRequest($request)) event("revenuecat", { action: "unhandled_endpoint", responseAt: Date.now() });
+      if (FIREBASE_PROBE.test(url) && locketRequest($request)) event("firebase", { action: "unhandled_project_or_namespace", requestAt: Date.now() });
+      return {};
+    }
+    CURRENT_SERVICE = isRC ? "revenuecat" : "firebase";
+    if (isFirebase && identity($request) === "other_app") return {};
     if (typeof $response === "undefined") return requestPatch($request, isRC);
+    if (!record($response)) return {};
     var status = statusCode($response);
+    // Keep shared RevenueCat traffic from other apps out of Locket's successful status.
+    if (isFirebase || locketRequest($request)) event(CURRENT_SERVICE, { action: "response_seen", responseAt: Date.now(), httpStatus: status,
+      signedResponse: Boolean(header($response.headers, "x-signature")) });
     if (status < 200 || status >= 300) {
       log("response: skipped HTTP " + status);
+      if (isFirebase || locketRequest($request)) event(CURRENT_SERVICE, { action: "http_error", httpStatus: status });
       return {};
     }
     if (typeof $response.body !== "string" || !$response.body.trim()) {
       log("response: skipped empty or non-text body");
+      if (isFirebase || locketRequest($request)) event(CURRENT_SERVICE, { action: "empty_or_nontext_body" });
       return {};
     }
-    var payload = JSON.parse($response.body);
+    var payload;
+    try { payload = JSON.parse($response.body); }
+    catch (_) {
+      if (isFirebase || locketRequest($request)) event(CURRENT_SERVICE, { action: "invalid_json_or_unsupported_format" });
+      return {};
+    }
     if (!record(payload) || Object.prototype.hasOwnProperty.call(payload, "error")) {
       log("response: skipped unexpected payload");
+      if (isFirebase || locketRequest($request)) event(CURRENT_SERVICE, { action: "unexpected_payload" });
       return {};
     }
     if (!(isRC ? goldPatch(payload, $request) : firebasePatch(payload))) return {};
-    return rewrittenResponse(payload, $response);
+    return rewrittenResponse(payload, $response, isFirebase);
   }
 
   var result = {};
@@ -460,6 +658,7 @@
     result = main();
   } catch (_) {
     log("response: skipped invalid JSON or unsupported runtime");
+    event(CURRENT_SERVICE, { action: "runtime_error" });
   }
   // A single completion point also covers invalid input and unknown URLs.
   $done(result);

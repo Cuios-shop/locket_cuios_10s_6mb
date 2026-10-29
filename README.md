@@ -1,110 +1,90 @@
-# Cuios • Locket 60s / 100 MB • v3.0.0
+# Cuios • Profile thống nhất v4.0.0
 
-Dự án mới **locket60s_amthanh_mic**, nhân bản từ [locket30s-fixed](https://github.com/Cuongqtx11/locket30s-fixed) tại commit `6dd3f5dc8c84311f236aaa92af49822ad59b81e5`. Repo cũ giữ nguyên. Dự án này dùng URL module, script và ảnh riêng; không cần cập nhật repo cũ để chạy.
+Repo mới **locket_cuios_stable**, kế thừa mã và 54 mẫu ghi chú từ locket60s_amthanh_mic. Các repo cũ không thay đổi. Tên repo không phải cam kết đã kiểm chứng mọi chức năng trên iPhone; đây là bản sửa luồng cấu hình và có công cụ để kiểm chứng trên thiết bị.
 
-Người dùng đã xác nhận bản gốc có mic, quay 60 giây, nhập video tối đa 10 giây/6 MB và ghi chú mới. v3 kế thừa phần đó; **chưa xác nhận trên iPhone việc nhập/gửi đủ 60 giây/100 MB, nền ảnh hoặc khung mới**. Kiểm thử offline không chứng minh máy chủ Locket chấp nhận upload.
+**Mục tiêu giữ nguyên:** quay 60s có mic/âm thanh, nhập video có tiếng 60s/100 MiB, 4 ghi chú thương hiệu + 50 mẫu mới, nền riêng và khung Aura trên widget gốc. **Chưa xác nhận các mục tiêu này hoạt động ổn định mỗi lần bật trên máy người dùng.**
 
-## Cài trên Shadowrocket
+## Cài một lần, kiểm tra cùng một profile
 
-Tắt module Locket cũ, chỉ bật một module của bản mới. Giữ MITM/CA đang hoạt động, tải lại script sau khi cập nhật, tắt/bật kết nối và đóng hẳn rồi mở lại Locket.
-
-Bản chính dùng khung **Aura tím hồng**:
+Tắt mọi module Locket khác trong cấu hình đang dùng. Không cần xoá Locket, xoá dữ liệu hoặc reset quyền riêng tư.
 
 ```text
-https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/locket60s_amthanh_mic.sgmodule
+https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/locket_cuios_stable.sgmodule
 ```
 
-| Lựa chọn | Link module đầy đủ |
-| --- | --- |
-| Aura | [locket60s_amthanh_mic.sgmodule](https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/locket60s_amthanh_mic.sgmodule) |
-| Gold | [locket60s-gold.sgmodule](https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/locket60s-gold.sgmodule) |
-| Rose | [locket60s-rose.sgmodule](https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/locket60s-rose.sgmodule) |
-| Giữ khung hiện tại | [locket60s-no-widget.sgmodule](https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/locket60s-no-widget.sgmodule) |
+1. Nhập module, giữ HTTPS Decryption/MITM và CA đã tin cậy. Bật kết nối Shadowrocket trước khi mở Locket.
+2. Trong Safari, nhập **đầy đủ `http://`** để mở trang cục bộ sau, khi Shadowrocket đang kết nối:
 
-Các link là module thay thế nhau, không bật đồng thời. Các tên locket60s.sgmodule, locket30s.sgmodule và locket60s-widget.sgmodule trong repo mới là alias của bản Aura; chúng không sửa repo cũ.
+```text
+http://cuios-status.invalid/status
+```
 
-## Video 60 giây, 100 MB và âm thanh
+3. Trang hiện v4.0.0 chứng minh runtime mới đã được proxy tải và thực thi. Bấm hai nút **Kiểm tra HTTPS** RevenueCat/Firebase; chỉ trang mang chữ **Cuios · HTTPS check v4.0.0** là kết quả hook thành công. Trang 404/Google hoặc lỗi chứng chỉ không phải thành công. Kết quả trình duyệt được ghi riêng, chưa chứng minh Locket đã gửi request cấu hình.
+4. Mở Locket, vào camera/cài đặt/Gold rồi quay lại trang trạng thái, chọn **Tải lại trạng thái**. So sánh thời gian RevenueCat và Firebase.
+5. Nếu Firebase đã sửa response, kiểm tra trong app. App có thể chỉ activate ở lần mở sau. Nếu thời gian request không đổi, đóng/mở liên tục không chứng minh đã fetch mới.
+6. Khi vẫn lỗi, mở **Xem báo cáo chẩn đoán** và gửi nội dung đó để đối chiếu. Báo cáo không lưu token, UID, header hoặc response tài khoản đầy đủ.
 
-### Nếu đã xoá/cài lại module nhưng vẫn nghi dùng mã cũ
+`.invalid` là địa chỉ trang mock trong script, không phải website công khai. Nó được trả lời cục bộ bởi hook http-request, không cần DNS/server bên ngoài. Không đổi URL thành https. Cơ chế mock cần được Shadowrocket thực thi; chưa thử trên iPhone ở môi trường này. Nếu trang không mở, báo rõ lỗi trang thay vì tiếp tục xoá/cài app.
 
-Dùng [locket60s-refresh.sgmodule](https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/locket60s-refresh.sgmodule) thay cho module hiện tại. Bản Refresh r1 dùng tên rule riêng và URL script gắn commit `9bb85e7`, khác URL main để loại trừ đường dẫn script đã lưu. Nó chạy cùng mã v3.0.0, không thay tính năng và không tự xoá dữ liệu Locket. Bản này cố định tại v3.0.0, không tự nhận các thay đổi script tương lai từ main.
+Bản [giữ khung server](https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/locket_cuios_no_widget.sgmodule) có cùng xử lý video/mic/ghi chú, chỉ không chèn khung Aura. Chỉ chọn một trong hai module.
 
-Xoá module trong Shadowrocket không xoá cache Remote Config bên trong Locket. Tắt mọi module Locket khác, bật kết nối trước khi mở Locket và tìm log có `firebase: v3.0.0` cùng `captions=54`. Nếu có log nhưng UI vẫn cũ, cần kiểm tra bước activate/schema phía app; nếu không có log thì chưa quan sát được response Firebase qua script này.
+## Đọc trạng thái
 
-Firebase có fetch interval và activate riêng: [tài liệu chính thức](https://firebase.google.com/docs/remote-config/ios/get-started). Proxy không tự gọi được phương thức xoá cache/fetch/activate bên trong app. Không gỡ Locket hoặc reset quyền riêng tư chỉ để xử lý cache script.
-
-- Giữ các cờ mic/âm thanh của bản 2.1 mà người dùng đã thử thành công.
-- Đồng bộ thời lượng camera, thư viện, cắt và các cấu hình upload có sẵn về 60 giây.
-- Bổ sung giới hạn file ở camera_roll và các key entry tương ứng, xử lý các nhóm media có tên được hỗ trợ như gold/free/upload/limits nếu có trong response.
-- 100 MB ở đây dùng cách tính nhị phân phổ biến trong module: **104857600 bytes = 100 MiB**; không nhầm số giây với mili-giây hoặc byte với MB.
-- Giữ codec, bitrate, cache ảnh, bucket/CDN và dữ liệu upload thực tế. Chỉ xử lý response cấu hình, không đọc/gửi file riêng của người dùng.
-
-`max-size=1048576` trong module là giới hạn body **JSON cấu hình** cho script, không phải giới hạn video; không cần tăng nó lên 100 MB. Các request video/storage không bị script buffer hay viết lại.
-
-Nếu vẫn thấy 10 giây/6 MB, xem dòng `diag v3.0.0 input library limits` để đối chiếu key thực, và dòng `firebase: v3.0.0 config target=60s; upload-bytes=104857600; captions=54`. Nếu chọn đủ clip nhưng gửi bị từ chối, cần mã lỗi upload thật; nâng giới hạn UI không thay chính sách máy chủ. [Phân tích kỹ thuật](docs/UPGRADE-v3.md).
-
-## 4 ghi chú thương hiệu + 50 mẫu mới
-
-Thay danh sách ghi chú trong picker bằng đúng 54 mẫu. Không xoá hay sửa chú thích của bài đã gửi.
-
-Bốn mẫu đầu, đúng thứ tự yêu cầu:
-
-1. mua chứng chỉ Cuios.shop
-2. Bản quyền Cuios
-3. Cưn🍤
-4. tom11th5
-
-Bên dưới là 5 nhóm, mỗi nhóm 10 mẫu: **Tình yêu, Vui vẻ, Cảm xúc, Trêu đùa, Dịu dàng**. Cả ID lẫn danh sách đăng ký được thay mới, không giữ bộ ghi chú cũ trong picker. Mỗi ghi chú có gradient màu dự phòng và ảnh nền PNG tự thiết kế, lấy từ chính repo này. Không thêm quảng cáo, tracker hoặc tài nguyên ảnh của bên thứ ba.
-
-![Xem 54 mẫu ghi chú](assets/captions-preview.jpg)
-
-Danh mục chỉnh được nằm ở [content/captions.json](content/captions.json). Ảnh preview chỉ minh hoạ nội dung/bố cục, không phải screenshot Locket; emoji do iOS render có thể khác bản xem trước.
-
-## Khung ngay trên widget gốc
-
-Dùng `widget_frame_event` với PNG viền trong suốt để thử trang trí widget Locket có sẵn. Ba thiết kế có gradient, quầng sáng và các ngôi sao; tâm ảnh trong suốt để giữ nội dung ảnh. Module không tạo một widget thay thế.
-
-| Aura | Gold | Rose |
+| Trạng thái | Ý nghĩa thực tế | Việc cần đối chiếu |
 | --- | --- | --- |
-| ![Aura](assets/widget-aura.png) | ![Gold](assets/widget-gold.png) | ![Rose](assets/widget-rose.png) |
+| Trang trạng thái không mở | Chưa xác nhận hook/runtime hoạt động | Cấu hình đang chọn, tải script, kết nối proxy |
+| Chưa thấy request | Script chưa quan sát được app gọi endpoint | MITM, rule trùng, app cache, routing |
+| Chỉ thấy request, chưa có response mới | Hook request đã chạy | Request có lỗi hoặc response bị rule khác xử lý không |
+| Đã sửa response | Profile mục tiêu đã gửi về app | Native activate, renderer, mic/picker và server upload |
+| Sửa một phần / partial | Có object media không khớp schema | warnings và inputMediaFields trong báo cáo |
+| no_entries | Server không trả cấu hình đầy đủ | Không dựng cấu hình giả hoặc replay dữ liệu tài khoản cũ |
+| http_error / unsupported format | API lỗi hoặc body chưa hỗ trợ | Mã HTTP, endpoint/runtime tương ứng |
+| unhandled_project_or_namespace | Thấy request nhận diện Locket ngoài project/namespace hỗ trợ | Cần xác định route thật trước khi sửa |
 
-Đây là **hiệu ứng hình ảnh tĩnh**, không tuyên bố hoạt ảnh/chớp sáng. Việc native widget có đọc event, chọn placement và cập nhật timeline hay không còn phụ thuộc phiên bản Locket/iOS. Nếu không hiện hoặc bố cục không phù hợp, dùng module no-widget và giữ các phần video/ghi chú.
+Quan sát cũ hơn 5 phút được đánh dấu rõ. Chưa có record khi kho chẩn đoán hỏng không được coi là bằng chứng app không gửi request. Các trạng thái kỹ thuật không tự xác nhận chức năng đã hoạt động trên máy.
 
-## Quay lại bản ổn định
+## Những thay đổi có căn cứ trong v4
 
-Tắt module mới và bật lại module của repo locket30s-fixed. Source/module cũ không thay đổi, nhưng cache Remote Config trên iPhone có thể vẫn chứa giá trị mới đến khi app fetch/activate lại cấu hình từ bản cũ. Không cần gỡ app hoặc reset quyền riêng tư.
+- Nhận diện Locket bằng **X-Client-Bundle-ID / X-Ios-Bundle-Identifier**, bên cạnh User-Agent và mã sản phẩm trong response. Header bundle mâu thuẫn sẽ không bị UA ghi đè.
+- Hỗ trợ ba host RevenueCat được SDK/tài liệu chính thức sử dụng; vẫn chỉ sửa receipts/subscriber v1. Các route khác được chẩn đoán và trả nguyên dữ liệu.
+- Bỏ conditional-cache header trên request đã nhận diện; không đổi Authorization, nonce, body upload hoặc dữ liệu video.
+- Firebase trả state UPDATE cho cấu hình hợp lệ đã sửa, và **ETag theo toàn bộ nội dung cấu hình đã sửa**, gồm metadata. Cùng nội dung giữ cùng ETag; nội dung/theme khác có revision khác.
+- Một profile 60s/100 MiB/54 ghi chú dùng một runtime độc lập, URL chứa SHA-256 rút gọn. Tất cả rule trỏ đúng cùng file; release.json lưu hash đầy đủ để kiểm tra.
+- Chẩn đoán cục bộ tách key RevenueCat/Firebase và hai phép kiểm tra HTTPS từ trình duyệt, tránh các script chạy song song ghi đè trạng thái nhau. Không lưu/replay response có thông tin tài khoản.
 
-## Kiểm tra thực tế
+Firebase có fetched config và active config riêng. **Proxy không thể ép app gọi fetch/activate hoặc xin quyền microphone nếu native không làm.** ETag mới sửa được một lớp giao thức khi có fetch; không vượt qua minimumFetchInterval của SDK hoặc giới hạn máy chủ. Xem [phân tích, nguồn và mức độ chắc chắn](docs/ANALYSIS-v4.md).
 
-1. Quay 60 giây, nói một câu, kiểm tra tiếng ở preview và bản người nhận mở.
-2. Chọn clip có tiếng dài 20 giây rồi 60 giây; kiểm tra cửa sổ cắt và gửi.
-3. Thử file lớn hơn 6 MB, rồi một file gần 100 MB; ghi rõ lỗi ở bước chọn, mã hoá hay upload.
-4. Kiểm tra bốn mẫu thương hiệu ở đầu, năm nhóm nội dung bên dưới, nền ảnh và widget đang có sẵn.
+## Nội dung và giới hạn tính năng
 
-Khi cần hỗ trợ, chỉ gửi các dòng log có tiền tố `[locket60s_amthanh_mic]` và mã lỗi đã che dữ liệu riêng. Không gửi token, Authorization, receipt, UID hoặc response tài khoản đầy đủ. Script không ghi các thông tin đó.
+- 60 giây và 104857600 bytes là cấu hình mục tiêu, không chứng minh picker/encoder/server chấp nhận file đó. Không thay codec, bitrate hoặc storage bucket.
+- Giữ các cờ mic/thư viện của nhánh trước, không coi tên cờ cộng đồng là API Locket chính thức. Báo cáo tên/kiểu field media giúp đối chiếu khi app dùng schema khác.
+- 54 ghi chú: bốn mẫu đầu là **mua chứng chỉ Cuios.shop**, **Bản quyền Cuios**, **Cưn🍤**, **tom11th5**; sau đó 50 mẫu trong năm nhóm. Ghi chú đã đăng không bị sửa.
+- 11 nền tự thiết kế và khung Aura dùng PNG từ repo mới. Khung là hiệu ứng hình ảnh tĩnh; không ép WidgetKit reload/animate.
+- Có chữ ký RevenueCat được ghi nhận bằng một boolean. Script không tạo chữ ký hợp lệ thay máy chủ; app có thể từ chối response đã sửa.
 
-## Phát triển và kiểm thử
+![54 mẫu ghi chú](assets/captions-preview.jpg)
 
-Node.js 20 trở lên, không cần npm install:
+## Kiểm thử
+
+Node.js 20 trở lên, không cần dependency:
 
 ```bash
 npm run check
 npm test
 ```
 
-29 bài kiểm thử bao gồm hồi quy Gold/mic, routing, dữ liệu lỗi, cấu hình 10s/6 MB, giây/mili-giây, bảo toàn codec và trường không liên quan, 54 ghi chú đúng thứ tự, đăng ký ID, asset tồn tại và các module chỉ trỏ repo mới.
+40 test logic: hồi quy Gold/media/54 ghi chú, nhận diện thiếu UA/bundle mâu thuẫn, host dự phòng, validator ổn định/đổi nội dung/metadata, mô hình fetched-active của SDK, NO_CHANGE, trạng thái cục bộ, lỗi/kho lưu trữ và dữ liệu chẩn đoán không chứa giá trị riêng.
 
-Khi sửa danh mục/module:
+Các test không thay thế kiểm tra mic/picker/upload trên iPhone. Để xác nhận trên máy cần test clip 10/20/60 giây có tiếng trước/sau gửi, file lớn hơn 6 MB, ghi chú và widget, rồi đối chiếu báo cáo cùng thời điểm.
+
+## Dựng bản phát hành
 
 ```bash
 python3 tools/build_script.py
 python3 tools/build_modules.py
+npm test
 ```
 
-Dựng ảnh tự thiết kế và contact sheet nếu muốn (chỉ công cụ authoring cần Pillow):
+build_modules tạo runtime content-addressed trong scripts/releases và module trỏ tới đúng artifact. Không sửa đè artifact đã phát hành. Khi đổi logic hoặc artwork, tăng version, dựng lại và kiểm tra. Artwork dựng bằng tools/build_artwork.py (chỉ bước authoring cần Pillow).
 
-```bash
-python3 tools/build_artwork.py
-```
-
-Mã kế thừa giấy phép MIT và lịch sử từ repo gốc của người dùng; các ghi chú/nền/khung mới được tạo cho dự án này. Các tài liệu analysis-v2 và diagnostics-v2.1 trong docs là ghi chép lịch sử, không mô tả trạng thái kiểm chứng của v3.
+Mã kế thừa MIT. Các ghi chép v2/v3 trong docs là lịch sử; tài liệu hiện tại là README và ANALYSIS-v4.md.

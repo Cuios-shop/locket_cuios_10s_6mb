@@ -4,10 +4,11 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const release = require("../release.json");
 
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "scripts/locket.js"), "utf8");
-const moduleText = fs.readFileSync(path.join(root, "locket30s.sgmodule"), "utf8");
+const moduleText = fs.readFileSync(path.join(root, "locket_cuios_stable.sgmodule"), "utf8");
 const rc = "https://api.revenuecat.com/v1/subscribers/test-user";
 const firebase = "https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch";
 
@@ -23,6 +24,8 @@ function run(options = {}) {
     $done(value) { calls++; output = JSON.parse(JSON.stringify(value)); },
     console: { log(value) { logs.push(value); } }
   };
+  if (options.store) context.$persistentStore = options.store;
+  if (options.method) context.$request.method = options.method;
   if (options.argument !== undefined) context.$argument = options.argument;
   if (!options.requestOnly) {
     context.$response = {
@@ -173,9 +176,9 @@ const rules = moduleText.split("\n").filter(line => line.includes(" = type=")).m
 }));
 
 test("all module rules load an existing script in this repository", () => {
-  assert.equal(rules.length, 3);
+  assert.equal(rules.length, 5);
   for (const rule of rules) {
-    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/scripts/locket.js?v=3.0.0");
+    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/" + release.runtime);
     assert.ok(fs.existsSync(path.join(root, "scripts/locket.js")));
   }
   assert.ok(!moduleText.includes("cloudfunctions"));
@@ -280,7 +283,7 @@ test("diagnostics expose only fixed schema/flag classifications, never response 
   };
   const result = run({ url: firebase, payload: { entries } });
   const logs = result.logs.join("\n");
-  assert.ok(logs.includes("diag v3.0.0 input schema camera=object camera_roll=object"));
+  assert.ok(logs.includes("diag v4.0.0 input schema camera=object camera_roll=object"));
   assert.ok(logs.includes("overlay_items=array(1)"));
   assert.ok(logs.includes("video_sound_enabled=off microphone_enabled=on"));
   assert.ok(logs.includes("mh_mic_enabled_v16=other"));
@@ -308,7 +311,7 @@ test("widget event is opt in, preserves unknown metadata and keeps asset in this
   const patched = JSON.parse(result.body.entries.widget_frame_event);
   assert.equal(patched.uid, "cuios_gold_frame_v3");
   assert.deepEqual(patched.extra, { keep: true });
-  assert.equal(patched.url, "https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/assets/widget-gold.png?v=3.0.0");
+  assert.equal(patched.url, "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/assets/widget-gold.png?v=4.0.0");
   assert.equal(result.body.entries.video_max_duration, "60.0");
   assert.ok(result.logs.some(line => line.includes("widget=gold-event-experimental")));
   const asset = fs.readFileSync(path.join(root, "assets/widget-gold.png"));
@@ -319,14 +322,6 @@ test("widget event is opt in, preserves unknown metadata and keeps asset in this
   const bad = run({ url: firebase, payload: { entries: { widget_frame_event: "{broken" } }, argument: "gold-frame" });
   assert.equal(bad.body.entries.widget_frame_event, "{broken");
   assert.ok(bad.logs.some(line => line.includes("widget=skipped-schema")));
-});
-
-test("widget variant is a complete module with a single explicit Firebase argument", () => {
-  const widget = fs.readFileSync(path.join(root, "locket60s-widget.sgmodule"), "utf8");
-  const lines = widget.split("\n").filter(line => line.includes(" = type="));
-  assert.equal(lines.length, 3);
-  assert.equal(lines.filter(line => line.includes("argument=aura-frame")).length, 1);
-  assert.ok(lines.find(line => line.startsWith("cuios_config =")).includes("argument=aura-frame"));
 });
 
 test("explicit catalogue replacement also repairs malformed old caption lists", () => {
@@ -346,13 +341,6 @@ test("rewritten response avoids stale HTTP caches without dropping unrelated hea
   assert.deepEqual(run({ status: 500, responseHeaders: headers }).output, {});
 });
 
-test("new module and legacy install URL use the same versioned configuration", () => {
-  const newModule = fs.readFileSync(path.join(root, "locket60s.sgmodule"), "utf8");
-  assert.equal(newModule.replace("/main/locket60s.sgmodule", "/main/locket30s.sgmodule"), moduleText);
-  assert.equal(require("../package.json").version, "3.0.0");
-  assert.ok(newModule.includes("?v=3.0.0"));
-});
-
 test("module URL rules route to the correct handler and exclude unrelated endpoints", () => {
   for (const url of [rc, rc + "?x=1", rc + "/", "https://api.revenuecat.com/v1/receipts", firebase, firebase + "?key=fixture"]) {
     for (const type of ["http-request", "http-response"]) {
@@ -361,8 +349,191 @@ test("module URL rules route to the correct handler and exclude unrelated endpoi
     assert.ok(run({ url, payload: url.startsWith("https://firebaseremoteconfig") ? { entries: {} } : { subscriber: {} } }).body);
   }
   for (const url of [rc + "/offerings", firebase.replace("locket-4252a", "other"), "https://api.locketcamera.com/fetchUserV2"]) {
-    assert.equal(rules.filter(rule => rule.pattern.test(url)).length, 0, url);
+    // Unknown RC endpoints/project IDs are observed by diagnostics, then passed through.
+    assert.deepEqual(run({ url }).output, {}, url);
   }
+});
+
+function memoryStore() {
+  const values = new Map();
+  return { values, read(key) { return values.get(key) || null; }, write(value, key) { values.set(key, value); return true; } };
+}
+
+function report(store) {
+  return JSON.parse(run({ url: "http://cuios-status.invalid/report.json", requestOnly: true, store }).output.response.body);
+}
+
+test("Locket identity uses the SDK bundle header even when User-Agent is absent", () => {
+  const headers = { "X-CLIENT-BUNDLE-ID": "com.locket.Locket", "X-RevenueCat-ETag": "cached" };
+  assert.ok(run({ headers }).body.subscriber.entitlements.Gold);
+  assert.deepEqual(run({ headers, requestOnly: true }).output.headers, { "X-CLIENT-BUNDLE-ID": "com.locket.Locket" });
+  assert.ok(run({ headers: { "X-Ios-Bundle-Identifier": "com.locket.Locket" } }).body);
+  const other = { "X-Client-Bundle-ID": "com.other.App", "User-Agent": "Locket/2.70" };
+  assert.deepEqual(run({ headers: other }).output, {});
+  assert.deepEqual(run({ headers: other, requestOnly: true }).output, {});
+});
+
+test("documented RevenueCat fallback hosts work, lookalike hosts never match", () => {
+  for (const host of ["api.revenuecat.com", "api.rc-backup.com", "api-production.8-lives-cat.io"]) {
+    const url = rc.replace("api.revenuecat.com", host);
+    assert.ok(run({ url, headers: { "X-Client-Bundle-ID": "com.locket.Locket" } }).body);
+    assert.equal(rules.filter(rule => rule.type === "http-response" && rule.pattern.test(url)).length, 1);
+  }
+  assert.deepEqual(run({ url: rc.replace("api.revenuecat.com", "api.rc-backup.com.evil.test") }).output, {});
+});
+
+test("Firebase recognizes only Locket project IDs for mutation and observes other routes without mutation", () => {
+  const url = firebase.replace("locket-4252a", "869942740286");
+  assert.ok(run({ url, payload: { entries: {} } }).body);
+  const store = memoryStore();
+  assert.deepEqual(run({ url: firebase.replace("locket-4252a", "different-project"), requestOnly: true,
+    headers: { "X-Ios-Bundle-Identifier": "com.locket.Locket" }, store }).output, {});
+  assert.equal(report(store).observed.firebase.action, "unhandled_project_or_namespace");
+  assert.deepEqual(run({ url: firebase, headers: { "X-Ios-Bundle-Identifier": "com.other.App" }, payload: { entries: {} } }).output, {});
+});
+
+test("Firebase ETag follows patched content, stays stable across repeat fetches and differs by theme", () => {
+  const first = run({ url: firebase, payload: { state: "UPDATE", entries: { camera: '{"max_duration":5}' } }, responseHeaders: { etag: '"server-static"' } });
+  const second = run({ url: firebase, payload: first.body, responseHeaders: { ETag: '"server-static"' } });
+  assert.match(first.output.headers.etag, /^"cuios-4\.0\.0-/);
+  assert.notEqual(first.output.headers.etag, '"server-static"');
+  assert.equal(first.output.headers.etag, second.output.headers.etag);
+  const gold = run({ url: firebase, payload: first.body, argument: "gold-frame" });
+  assert.notEqual(gold.output.headers.etag, first.output.headers.etag);
+  assert.equal(first.body.state, "UPDATE");
+  assert.equal(second.body.state, "UPDATE");
+});
+
+test("activation model reproduces stale-body/same-ETag failure and accepts the rewritten revision", () => {
+  // Mirrors the protocol decision in FIRRemoteConfig.activate, not native media behavior.
+  const sdk = { etag: '"server-static"', fetched: { seconds: 15 }, active: { seconds: 15 }, fetchedAt: 1, appliedAt: 1, time: 2 };
+  function receive(payload, etag) {
+    sdk.fetched = payload;
+    if (etag !== sdk.etag) { sdk.etag = etag; sdk.fetchedAt = sdk.time++; }
+    if (sdk.fetchedAt > sdk.appliedAt) { sdk.active = sdk.fetched; sdk.appliedAt = sdk.time++; }
+  }
+  receive({ seconds: 30 }, '"server-static"');
+  assert.equal(sdk.active.seconds, 15);
+  const fresh = run({ url: firebase, payload: { state: "UPDATE", entries: { camera: '{"max_duration":15}' } } });
+  receive({ seconds: JSON.parse(fresh.body.entries.camera).max_duration }, fresh.output.headers.etag);
+  assert.equal(sdk.active.seconds, 60);
+});
+
+test("metadata updates also change the config validator, property order alone does not", () => {
+  const a = run({ url: firebase, payload: { state: "UPDATE", entries: {}, personalizationMetadata: { variant: "a", group: "x" } } });
+  const reordered = run({ url: firebase, payload: { personalizationMetadata: { group: "x", variant: "a" }, entries: {}, state: "UPDATE" } });
+  const changed = run({ url: firebase, payload: { state: "UPDATE", entries: {}, personalizationMetadata: { variant: "b", group: "x" } } });
+  assert.equal(a.output.headers.etag, reordered.output.headers.etag);
+  assert.notEqual(a.output.headers.etag, changed.output.headers.etag);
+});
+
+test("NO_CHANGE without complete entries is reported, never fabricated from old app state", () => {
+  const store = memoryStore();
+  run({ url: firebase, payload: { state: "UPDATE", entries: {} }, store });
+  assert.deepEqual(run({ url: firebase, payload: { state: "NO_CHANGE" }, store }).output, {});
+  assert.equal(report(store).observed.firebase.action, "no_entries");
+  for (const state of ["NO_TEMPLATE", "EMPTY_CONFIG", "not-a-real-state"]) {
+    assert.deepEqual(run({ url: firebase, payload: { state, entries: {} }, store }).output, {});
+  }
+});
+
+test("local status proves runtime execution but never claims native features or activation were verified", () => {
+  const store = memoryStore();
+  const before = report(store);
+  assert.equal(before.runtime, "4.0.0");
+  assert.deepEqual(before.observed, {});
+  assert.equal(before.deviceFeaturesVerified, false);
+  assert.equal(before.recipe.seconds, 60);
+  const html = run({ url: "http://cuios-status.invalid/status", requestOnly: true, store }).output.response;
+  assert.equal(html.status, 200);
+  assert.ok(html.body.includes("Chưa quan sát thấy request"));
+  assert.equal(html.headers["Cache-Control"], "no-store");
+  assert.ok(html.headers["Content-Security-Policy"].includes("default-src 'none'"));
+  assert.equal(run({ url: "http://cuios-status.invalid/status", requestOnly: true, method: "POST", store }).output.response.status, 405);
+  assert.equal(run({ url: "http://cuios-status.invalid/status", requestOnly: true, method: "HEAD", store }).output.response.body, "");
+});
+
+test("diagnostic service records survive interleaved requests and redact private inputs", () => {
+  const store = memoryStore();
+  run({ requestOnly: true, headers: { "X-Client-Bundle-ID": "com.locket.Locket", Authorization: "secret-auth-fixture" }, store });
+  run({ url: firebase, payload: { state: "UPDATE", entries: { private: "secret-config-value", camera: '{"private":"secret-inner-value"}' } }, store });
+  run({ url: rc.replace("test-user", "secret-account-id"), store });
+  const state = report(store);
+  assert.equal(state.observed.firebase.action, "patched");
+  assert.equal(state.observed.revenuecat.action, "patched");
+  assert.equal(state.observed.firebase.sentCaptions, 54);
+  assert.equal(state.observed.firebase.sentETag, run({ url: firebase, payload: { state: "UPDATE", entries: { private: "secret-config-value", camera: '{"private":"secret-inner-value"}' } } }).output.headers.etag);
+  const serialized = JSON.stringify([...store.values]);
+  for (const value of ["secret-auth-fixture", "secret-config-value", "secret-inner-value", "secret-account-id"]) assert.ok(!serialized.includes(value));
+  assert.ok(store.values.has("CUIOS_STABLE_V4_DIAGNOSTICS_firebase"));
+  assert.ok(store.values.has("CUIOS_STABLE_V4_DIAGNOSTICS_revenuecat"));
+});
+
+test("HTTP errors and unsupported format have distinct status; unknown schemas remain partial", () => {
+  const store = memoryStore();
+  run({ url: firebase, status: 403, store });
+  assert.equal(report(store).observed.firebase.action, "http_error");
+  run({ body: "binary-format-fixture", store });
+  assert.equal(report(store).observed.revenuecat.action, "invalid_json_or_unsupported_format");
+  run({ url: firebase, payload: { state: "UPDATE", entries: { camera: "{broken" } }, store });
+  assert.equal(report(store).observed.firebase.action, "partial");
+  assert.ok(report(store).observed.firebase.warnings.includes("camera"));
+});
+
+test("missing, throwing or corrupt persistent storage cannot break app requests", () => {
+  const throwing = { read() { throw Error("no storage"); }, write() { throw Error("no storage"); } };
+  assert.ok(run({ url: firebase, payload: { state: "UPDATE", entries: {} }, store: throwing }).body);
+  assert.equal(report(throwing).storageAvailable, false);
+  const store = memoryStore();
+  store.values.set("CUIOS_STABLE_V4_DIAGNOSTICS_firebase", '{"schema":1,"data":{"at":"broken"}}');
+  assert.equal(run({ url: "http://cuios-status.invalid/status", requestOnly: true, store }).output.response.status, 200);
+  assert.ok(run({ url: firebase, payload: { state: "UPDATE", entries: {} } }).body);
+});
+
+test("media diagnostics reveal flag names/types needed for compatibility without their private string values", () => {
+  const store = memoryStore();
+  run({ url: firebase, payload: { state: "UPDATE", entries: {
+    camera: JSON.stringify({ recordAudio: false, microphone_token: "never-save-this", audioCodec: "private-codec-string", private_sound: "never-save-either" })
+  } }, store });
+  const fields = report(store).observed.firebase.inputMediaFields;
+  assert.ok(fields.some(field => field.field === "recordAudio" && field.flag === "off"));
+  assert.ok(fields.some(field => field.field === "audioCodec" && field.type === "unparsed-string"));
+  const saved = JSON.stringify([...store.values]);
+  for (const token of ["never-save-this", "private-codec-string", "never-save-either", "microphone_token", "private_sound"]) assert.ok(!saved.includes(token));
+});
+
+test("the complete profile references a single content-addressed runtime and no old modules", () => {
+  const crypto = require("node:crypto");
+  const published = fs.readFileSync(path.join(root, release.runtime));
+  assert.equal(published.toString(), source);
+  assert.equal(crypto.createHash("sha256").update(published).digest("hex"), release.sha256);
+  assert.equal(release.version, require("../package.json").version);
+  assert.ok(source.includes('var VERSION = "' + release.version + '";'));
+  for (const name of ["locket_cuios_stable.sgmodule", "locket_cuios_no_widget.sgmodule"]) {
+    const text = fs.readFileSync(path.join(root, name), "utf8");
+    const paths = [...text.matchAll(/script-path=([^,\n]+)/g)].map(match => match[1]);
+    assert.equal(paths.length, 5);
+    assert.equal(new Set(paths).size, 1);
+    assert.ok(paths[0].endsWith(release.runtime));
+    assert.ok(text.includes("api.rc-backup.com"));
+    assert.equal(rules.filter(rule => rule.type === "http-request" && rule.pattern.test("http://cuios-status.invalid/status")).length, 1);
+  }
+});
+
+test("HTTPS self-check is local and records browser transport separately from actual Locket traffic", () => {
+  const store = memoryStore();
+  for (const host of ["api.revenuecat.com", "firebaseremoteconfig.googleapis.com"]) {
+    const url = "https://" + host + "/cuios-check";
+    assert.equal(rules.filter(rule => rule.type === "http-request" && rule.pattern.test(url)).length, 1);
+    const result = run({ url, requestOnly: true, store });
+    assert.equal(result.output.response.status, 200);
+    assert.ok(result.output.response.body.includes("Cuios · HTTPS check v4.0.0"));
+  }
+  const state = report(store).observed;
+  assert.equal(state.https_firebase.action, "https_hook_seen");
+  assert.equal(state.https_revenuecat.action, "https_hook_seen");
+  assert.equal(state.firebase, undefined);
+  assert.equal(state.revenuecat, undefined);
 });
 
 test("a library config capped at 10s and 6 MiB becomes 60s and 100 MiB across media profiles", () => {
@@ -412,7 +583,7 @@ test("all caption backgrounds resolve to local PNG assets and include fallback c
     assert.ok(background.colors.every(color => /^#[0-9A-F]{6}$/.test(color)));
     const url = new URL(background.image.data);
     assert.equal(url.hostname, "raw.githubusercontent.com");
-    assert.ok(url.pathname.startsWith("/Cuongqtx11/locket60s_amthanh_mic/main/assets/captions/"));
+    assert.ok(url.pathname.startsWith("/Cuongqtx11/locket_cuios_stable/main/assets/captions/"));
     const file = url.pathname.split("/main/")[1];
     assert.ok(fs.existsSync(path.join(root, file)), file);
     uniqueAssets.add(file);
@@ -420,33 +591,6 @@ test("all caption backgrounds resolve to local PNG assets and include fallback c
   assert.equal(uniqueAssets.size, 11);
   const catalogue = JSON.parse(fs.readFileSync(path.join(root, "content/captions.json"), "utf8"));
   assert.deepEqual(items.map(item => item.caption.text), catalogue.flatMap(group => group.items.map(item => item[1])));
-});
-
-test("all complete module variants route to the new repo and opt in to the selected widget", () => {
-  const files = fs.readdirSync(root).filter(file => file.endsWith(".sgmodule"));
-  assert.equal(files.length, 8);
-  for (const file of files) {
-    const module = fs.readFileSync(path.join(root, file), "utf8");
-    assert.ok(!module.includes("locket30s-fixed"));
-    const lines = module.split("\n").filter(line => line.includes(" = type="));
-    assert.equal(lines.length, 3);
-    for (const line of lines) {
-      const target = file === "locket60s-refresh.sgmodule"
-        ? "/locket60s_amthanh_mic/9bb85e7170fab5ffd8160889c934ddb2cc5ec51b/scripts/locket.js"
-        : "/locket60s_amthanh_mic/main/scripts/locket.js?v=3.0.0";
-      assert.ok(line.includes(target));
-      new RegExp(line.match(/pattern=(.*?), script-path=/)[1]);
-    }
-    const option = module.match(/argument=([^,]+)/);
-    if (file === "locket60s-no-widget.sgmodule") assert.equal(option, null);
-    else assert.ok(option);
-    const result = run({ url: firebase, payload: { entries: {} }, argument: option ? option[1] : undefined });
-    if (option) {
-      const event = JSON.parse(result.body.entries.widget_frame_event);
-      const asset = new URL(event.url).pathname.split("/main/")[1];
-      assert.ok(fs.existsSync(path.join(root, asset)));
-    } else assert.equal(result.body.entries.widget_frame_event, undefined);
-  }
 });
 
 test("posted moments and profile APIs are never rewritten by the new catalogue or upload limits", () => {
