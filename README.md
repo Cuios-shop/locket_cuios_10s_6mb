@@ -24,7 +24,7 @@ http://cuios-status.invalid/status
 5. Nếu Firebase đã sửa response, kiểm tra trong app. App có thể chỉ activate ở lần mở sau. Nếu thời gian request không đổi, đóng/mở liên tục không chứng minh đã fetch mới.
 6. Khi vẫn lỗi, mở **Xem báo cáo chẩn đoán** và gửi nội dung đó để đối chiếu. Báo cáo không lưu token, UID, header hoặc response tài khoản đầy đủ.
 
-`.invalid` là địa chỉ trang mock trong script, không phải website công khai. Nó được trả lời cục bộ bởi hook http-request, không cần DNS/server bên ngoài. Không đổi URL thành https. Cơ chế mock cần được Shadowrocket thực thi; chưa thử trên iPhone ở môi trường này. Nếu trang không mở, báo rõ lỗi trang thay vì tiếp tục xoá/cài app.
+`.invalid` là địa chỉ trang mock trong script, không phải website công khai. Module có ánh xạ Host riêng tới IP dành cho proxy để tránh NXDOMAIN trước khi hook HTTP chạy. Trang được trả lời cục bộ bởi hook http-request, không cần DNS/server bên ngoài. Không đổi URL thành https. Host mapping và mock cần được Shadowrocket thực thi; chưa thử trên iPhone ở môi trường này. Nếu trang không mở, báo rõ lỗi trang thay vì tiếp tục xoá/cài app.
 
 Bản [giữ khung server](https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/locket_cuios_no_widget.sgmodule) có cùng xử lý video/mic/ghi chú, chỉ không chèn khung Aura. Chỉ chọn một trong hai module.
 

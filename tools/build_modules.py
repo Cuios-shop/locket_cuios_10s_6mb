@@ -32,6 +32,9 @@ cuios4_request = type=http-request, pattern={request}, script-path={base}{relati
 cuios4_revenuecat = type=http-response, pattern={rc}, script-path={base}{relative}, requires-body=true, max-size=1048576, timeout=10
 cuios4_firebase = type=http-response, pattern={fb}, script-path={base}{relative}{option}, requires-body=true, max-size=1048576, timeout=10
 
+[Host]
+cuios-status.invalid = 198.18.0.1
+
 [MITM]
 hostname = %APPEND% api.revenuecat.com, api.rc-backup.com, api-production.8-lives-cat.io, firebaseremoteconfig.googleapis.com
 """

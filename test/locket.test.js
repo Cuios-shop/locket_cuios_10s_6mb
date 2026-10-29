@@ -516,6 +516,7 @@ test("the complete profile references a single content-addressed runtime and no 
     assert.equal(new Set(paths).size, 1);
     assert.ok(paths[0].endsWith(release.runtime));
     assert.ok(text.includes("api.rc-backup.com"));
+    assert.ok(text.includes("cuios-status.invalid = 198.18.0.1"));
     assert.equal(rules.filter(rule => rule.type === "http-request" && rule.pattern.test("http://cuios-status.invalid/status")).length, 1);
   }
 });
