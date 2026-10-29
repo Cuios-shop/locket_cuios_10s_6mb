@@ -1,12 +1,14 @@
 {
   "name": "locket30s-fixed",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "Module thử nghiệm cho Locket trên Surge/Shadowrocket, có kiểm thử offline",
   "scripts": {
     "check": "node --check scripts/locket.js",
     "test": "node --test"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "license": "MIT"
 }

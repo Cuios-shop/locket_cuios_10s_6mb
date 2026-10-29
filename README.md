@@ -1,16 +1,16 @@
-# Locket Gold & video 60 giây — v2.0.0 thử nghiệm
+# Locket Gold & video 60 giây — v2.1.0 thử nghiệm
 
 Script viết lại để sửa các lỗi cấu hình phát hiện trong [anhtu4n/locket30s](https://github.com/anhtu4n/locket30s), kiểm tra tại commit `7c9b967b86a402425dd5035879010f39c87e87bc` ngày 29/10/2026. Repo này chứa mã mới cho phần Gold, cấu hình video và 20 mẫu ghi chú tự viết; không sao chép toàn bộ bộ caption/filter của tác giả gốc. Giấy phép MIT ở đây áp dụng cho mã mới trong repo này.
 
-**Đã kiểm thử bằng Node.js với response giả lập. Chưa kiểm thử trên iPhone hoặc tài khoản Locket thật.** Việc sửa response ở thiết bị không tạo thuê bao App Store, không cấp quyền Gold trên máy chủ và không bảo đảm upload video 60 giây thành công. Chưa xác định phiên bản Locket/iOS cụ thể tương thích.
+**Người dùng đã xác nhận v2.0 quay được 60 giây trên Shadowrocket. Mic/âm thanh, video thư viện và ghi chú mới chưa hoạt động theo phản hồi của người dùng. v2.1 mới được kiểm thử logic offline, chưa được xác nhận sửa được ba phần này trên iPhone.** Việc sửa response ở thiết bị không tạo thuê bao App Store, không cấp quyền Gold trên máy chủ và không bảo đảm upload video 60 giây thành công. Chưa xác định phiên bản Locket/iOS cụ thể tương thích.
 
-## Nâng cấp v2.0.0
+## Trạng thái hiện tại
 
-Người dùng đang dùng **Shadowrocket** và báo bản cũ quay được **15 giây**. Chưa có phiên bản Locket/iOS, log Firebase hay video mẫu từ thiết bị để xác định nguyên nhân giới hạn đó. Bản này đặt cấu hình mục tiêu 60 giây; chưa xác nhận 60 giây hoạt động trên thiết bị.
+Người dùng dùng **Shadowrocket**, bản Locket vừa tải từ App Store, xác nhận quay **60 giây**, nhưng app không hỏi quyền mic, chỉ cho chọn ảnh và chưa hiện ghi chú mới. Chưa có log cấu hình thật từ thiết bị để xác định cờ/schema đang được app đọc. Giữ phần quay đã hoạt động và kiểm tra riêng ba phần còn thiếu.
 
 | Yêu cầu | Thay đổi trong module | Phần cần kiểm tra trên iPhone |
 | --- | --- | --- |
-| Quay 60 giây | Đồng bộ camera, các key thời lượng ở entries và `video_config` nếu có | Camera có tiếp tục sau 15 giây không |
+| Quay 60 giây | Giữ cấu hình đã có tác dụng ở v2.0 | Người dùng xác nhận quay được; chưa xác nhận gửi đủ thời lượng |
 | Up video thư viện | Bật cờ preview/import/upload; đồng bộ chọn và cắt về 60 giây | Có nút chọn video, chọn được đủ clip và gửi được không |
 | Ghi chú mới | Bổ sung 20 mẫu mới và 12 loại ghi chú native nếu chưa có, giữ nội dung server | App có hỗ trợ renderer/từng loại ghi chú không |
 | Quay có mic/âm thanh | Bật ba cờ âm thanh/microphone tham khảo từ mã cộng đồng | Quyền Microphone, audio session và bản Locket có thu âm không |
@@ -18,6 +18,20 @@ Người dùng đang dùng **Shadowrocket** và báo bản cũ quay được **1
 | Cập nhật cache | URL script có `?v=2.0.0`; response đã sửa có `Cache-Control: no-store` khi runtime có headers | Shadowrocket tải script mới và Locket thực sự fetch Firebase chưa |
 
 Không thay codec, bitrate, bucket/CDN hoặc giới hạn byte upload. Không chèn schema `video_config`/Android nếu server không cung cấp. Các cờ Remote Config là khả năng tương thích tham khảo từ module cộng đồng, không phải API chính thức do Locket công bố. Xem [phân tích và bằng chứng](docs/analysis-v2.md).
+
+## Bản 2.1: sửa cấu hình và chẩn đoán
+
+- Giữ các giá trị thời lượng 60 giây.
+- Đăng ký thêm ID của 20 mẫu ghi chú vào `overlay_dynamic_captions`, bên cạnh dữ liệu trong `overlay_items`. Đây là sửa thiếu sót trong cách đăng ký của module; chưa chứng minh renderer Locket sẽ nhận các mẫu này.
+- Bổ sung một số cờ lồng trong camera/camera_roll và thử `mh_mic_enabled_v16` tham khảo từ mã cộng đồng. Không coi tên cờ này là API chính thức hoặc bằng chứng app có chức năng thu âm.
+- Ghi hai dòng `diag v2.1.0 input schema` và `diag v2.1.0 input flags` trước khi patch. Chỉ ghi loại cấu trúc/số lượng và trạng thái on/off/absent/other; không ghi header, token, UID, nội dung ghi chú hay response gốc.
+- Khung widget có biến thể riêng, không bật mặc định. Ưu tiên hiện tại vẫn là mic, âm thanh, thư viện và ghi chú.
+
+### Cần log để tiếp tục sửa trên bản App Store
+
+Cập nhật module/script rồi mở lại Locket. Trong log script Shadowrocket, sao chép **hai dòng bắt đầu bằng `[locket30s-fixed] diag v2.1.0`**, cùng dòng `firebase: v2.1.0`. Không gửi request/response đầy đủ hoặc Authorization. Nếu không có hai dòng này, báo rõ không có log: module chưa quan sát được cấu hình Firebase mới.
+
+Không hiện yêu cầu mic và picker chỉ nhận ảnh là các hiện tượng phía client, chưa đủ để xác định app thiếu chức năng hay đang tắt bằng config. Proxy không tự tạo được UI xin quyền, audio session hoặc picker mới nếu client chưa hỗ trợ. Khi đã có log mà vẫn thiếu mic/video, cần kiểm tra triển khai native hoặc dùng công cụ riêng; không tiếp tục khẳng định mở khoá chỉ từ test JSON. Xem [chẩn đoán 2.1](docs/diagnostics-v2.1.md).
 
 ## Link nhập module
 
@@ -30,10 +44,10 @@ Repo công khai để Surge/Shadowrocket tải module và script qua URL raw mà
 ## Cập nhật từ bản 30 giây trên Shadowrocket
 
 1. Tắt module Locket cũ và các module khác bắt cùng RevenueCat/Firebase.
-2. Cập nhật module bằng URL `locket60s.sgmodule` ở trên. URL cũ [locket30s.sgmodule](https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/locket30s.sgmodule) vẫn được giữ và cũng trỏ tới v2.0.0. Chỉ bật một bản.
-3. Kiểm tra tên module có **60s - v2.0.0** và script-path kết thúc bằng `locket.js?v=2.0.0`. Nếu Shadowrocket vẫn lưu script cũ, dùng chức năng cập nhật/tải lại script của app.
+2. Cập nhật module bằng URL `locket60s.sgmodule` ở trên. URL cũ [locket30s.sgmodule](https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/locket30s.sgmodule) vẫn được giữ và cũng trỏ tới v2.1.0. Chỉ bật một bản.
+3. Kiểm tra tên module có **60s - v2.1.0** và script-path kết thúc bằng `locket.js?v=2.0.0`. Nếu Shadowrocket vẫn lưu script cũ, dùng chức năng cập nhật/tải lại script của app.
 4. Giữ HTTPS Decryption/MITM và CA đã dùng. Tắt/bật lại kết nối Shadowrocket, đóng hẳn rồi mở Locket.
-5. Kiểm tra log **`[locket30s-fixed] firebase: v2.0.0 config target=60s`**. Không có log này thì chưa xác nhận được phần cấu hình 60 giây đã chạy. Firebase có bộ nhớ đệm riêng; đổi module và mở lại app không bảo đảm app lập tức fetch cấu hình mới. Không gỡ Locket chỉ để thử cache.
+5. Kiểm tra log **`[locket30s-fixed] firebase: v2.1.0 config target=60s`**. Không có log này thì chưa xác nhận được phần cấu hình 60 giây đã chạy. Firebase có bộ nhớ đệm riêng; đổi module và mở lại app không bảo đảm app lập tức fetch cấu hình mới. Không gỡ Locket chỉ để thử cache.
 
 Tiền tố log và tên repo `locket30s-fixed` được giữ để tương thích, không có nghĩa bản mới vẫn đặt 30 giây.
 
@@ -45,7 +59,7 @@ Tiền tố log và tên repo `locket30s-fixed` được giữ để tương th�
 2. Trong cấu hình đang dùng, mở phần **Modules**, thêm URL module ở trên rồi bật module. Tên mục có thể khác giữa các phiên bản.
 3. Bật HTTPS Decryption/MITM. Nếu chưa có CA, tạo và cài CA từ Shadowrocket; vào iOS **Cài đặt → Cài đặt chung → Giới thiệu → Cài đặt tin cậy chứng nhận**, bật tin cậy đầy đủ cho CA vừa cài.
 4. Bật kết nối Shadowrocket, đóng hẳn Locket rồi mở lại. Mở trang Gold/cài đặt để app phát sinh request cập nhật.
-5. Xem log script có tiền tố `[locket30s-fixed]`. Log `local Gold response patched` xác nhận phần RevenueCat. Phần Firebase phải có `v2.0.0 config target=60s`; log này chứng minh script sửa response, vẫn cần kiểm tra quay và gửi trong app.
+5. Xem log script có tiền tố `[locket30s-fixed]`. Log `local Gold response patched` xác nhận phần RevenueCat. Phần Firebase phải có `v2.1.0 config target=60s`; log này chứng minh script sửa response, vẫn cần kiểm tra quay và gửi trong app.
 
 ### Surge trên iOS
 
@@ -93,6 +107,16 @@ Giữ các entry Firebase không liên quan, trộn các trường camera vào o
 
 Khi báo lỗi, cung cấp tên/phiên bản app proxy, Locket, iOS, log có tiền tố trên và bước lỗi cụ thể. Không đăng token, Authorization, receipt, số điện thoại, UID hoặc response nguyên bản lên GitHub.
 
+## Khung widget — tuỳ chọn, chưa xác nhận trên thiết bị
+
+Module thường chỉ bật gate `custom_widget_frames`; không thay khung sự kiện sẵn có. Nếu muốn thử một khung Gold hình học có tâm trong suốt:
+
+```text
+https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/locket60s-widget.sgmodule
+```
+
+Đây là **module đầy đủ thay thế** cho bản thường, chỉ bật một bản để tránh rule trùng. Variant truyền `argument=gold-frame` cho handler Firebase và đặt `widget_frame_event` tới [PNG tự tạo](assets/widget-gold.png). Không dựng kho khung hoặc style ID chưa có trong client. Schema sự kiện được tham khảo từ module gốc, chưa xác minh Locket 2.70 có sử dụng nó. Widget có thể cần cập nhật timeline riêng; module không ép iOS reload widget. Mã dựng PNG nằm ở `tools/build_widget_frame.py`, cần Pillow nếu muốn dựng lại; người dùng module không cần Python.
+
 ## Kiểm thử
 
 Yêu cầu Node.js 20 trở lên. Không cần cài dependency:
@@ -102,7 +126,7 @@ npm run check
 npm test
 ```
 
-Kiểm thử chạy script trong `node:vm` với globals tương tự Surge/Shadowrocket và kiểm tra trực tiếp regex, đường dẫn script trong module. 21 bài kiểm thử bao gồm routing RevenueCat/Firebase, dữ liệu lỗi, app khác, bảo toàn cấu hình, thời lượng giây/mili-giây, âm thanh, merge ghi chú, cache và số lần gọi `$done`. GitHub Actions chạy cùng lệnh khi push/PR. Đây là kiểm thử logic offline, không mô phỏng được giao diện, CA, cache SDK hoặc việc máy chủ chấp nhận upload.
+Kiểm thử chạy script trong `node:vm` với globals tương tự Surge/Shadowrocket và kiểm tra trực tiếp regex, đường dẫn script trong module. 25 bài kiểm thử bao gồm routing RevenueCat/Firebase, dữ liệu lỗi, app khác, bảo toàn cấu hình, thời lượng giây/mili-giây, âm thanh, merge ghi chú, cache và số lần gọi `$done`. GitHub Actions chạy cùng lệnh khi push/PR. Đây là kiểm thử logic offline, không mô phỏng được giao diện, CA, cache SDK hoặc việc máy chủ chấp nhận upload.
 
 ## Tài liệu tham chiếu
 

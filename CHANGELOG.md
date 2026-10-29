@@ -1,5 +1,13 @@
 # Thay đổi
 
+## 2.1.0
+
+- Giữ phần quay 60 giây mà người dùng đã xác nhận hoạt động trên Shadowrocket.
+- Bổ sung đăng ký ID ghi chú remote vào danh sách dynamic captions, giữ nhóm và tránh trùng ID.
+- Bổ sung cờ tương thích media/mic và log chẩn đoán cấu trúc/flag trước khi patch, không in dữ liệu riêng.
+- Thêm khung Gold PNG tự tạo trong biến thể module tuỳ chọn; không bật khung sự kiện ở module thường.
+- 25 kiểm thử logic offline; chưa xác nhận sửa được mic, tiếng video, video thư viện hay ghi chú trên bản App Store của người dùng.
+
 ## 2.0.0
 
 - Cấu hình thử nghiệm 60 giây đồng bộ cho quay, nhập, cắt và các key thời lượng được hỗ trợ.

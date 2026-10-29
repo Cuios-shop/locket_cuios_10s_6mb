@@ -1,10 +1,10 @@
-/* global $request, $response, $done */
+/* global $request, $response, $done, $argument */
 // Standalone Surge/Shadowrocket script. No network calls or persistent user data.
 (function () {
   "use strict";
 
   var TAG = "[locket30s-fixed] ";
-  var VERSION = "2.0.0";
+  var VERSION = "2.1.0";
   var VIDEO_SECONDS = 60;
   var RC = /^https:\/\/api\.revenuecat\.com\/v1\/(?:receipts|subscribers\/[^/?#]+)\/?(?:\?[^#]*)?$/i;
   var FIREBASE = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?[^#]*)?$/i;
@@ -126,15 +126,45 @@
         previous = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key];
       } catch (_) {
         log("firebase: skipped malformed nested entry " + key);
-        return;
+        return false;
       }
       if (!record(previous)) {
         log("firebase: skipped unexpected nested entry " + key);
-        return;
+        return false;
       }
     }
     // Remote Config entry values are strings, including nested JSON.
     entries[key] = JSON.stringify(Object.assign({}, previous, patch));
+    return true;
+  }
+
+  function configDiagnostics(entries) {
+    function shape(value) {
+      if (value === undefined) return "absent";
+      if (typeof value === "string") {
+        try { value = JSON.parse(value); } catch (_) { return "unparsed-string"; }
+      }
+      if (Array.isArray(value)) return "array(" + value.length + ")";
+      if (record(value)) return "object";
+      return value === null ? "null" : typeof value;
+    }
+    function flag(value) {
+      if (value === undefined) return "absent";
+      if (value === true || value === "true") return "on";
+      if (value === false || value === "false") return "off";
+      return "other";
+    }
+    // Fixed allowlists and classifications only. Never print user-controlled values.
+    log("diag v" + VERSION + " input schema " + ["camera", "camera_roll", "video_config",
+      "feature_gates", "overlay_items", "overlay_dynamic_captions", "widget_frame_event"].map(function (key) {
+      return key + "=" + shape(entries[key]);
+    }).join(" "));
+    log("diag v" + VERSION + " input flags " + ["video_sound_enabled", "microphone_enabled",
+      "camera_microphone_enabled", "mh_mic_enabled_v16", "camera_roll_video_enabled",
+      "camera_roll_video_upload_enabled", "internal_camera_roll_video_upload_enabled",
+      "custom_widget_frames_enabled"].map(function (key) {
+      return key + "=" + flag(entries[key]);
+    }).join(" "));
   }
 
   function patchMedia(entries, key, defaults) {
@@ -145,6 +175,13 @@
       config = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key];
     } catch (_) { return; }
     if (!record(config)) return;
+
+    // Compatibility defaults; these do not add native capture/picker implementations.
+    var switches = key === "camera" ? ["microphone_enabled", "sound_enabled"]
+      : key === "camera_roll" ? ["enabled", "video_enabled", "video_upload_enabled", "preserve_audio"] : [];
+    switches.forEach(function (name) {
+      if (config[name] === undefined) config[name] = true;
+    });
 
     // Only known media entries; never rewrite arbitrary numbers or Android schemas.
     ["gold_max_duration", "goldMaxDuration", "max_duration", "maxDuration",
@@ -199,10 +236,12 @@
       nativeTypes.forEach(function (type) {
         if (types.indexOf(type) < 0) types.push(type);
       });
-      entries.overlay_dynamic_captions = JSON.stringify(types);
     }
     var groups = arrayEntry(entries, "overlay_items");
-    if (!groups) return 0;
+    if (!groups) {
+      if (types) entries.overlay_dynamic_captions = JSON.stringify(types);
+      return 0;
+    }
     var ids = Object.create(null);
     groups.forEach(function (group) {
       if (!record(group) || !Array.isArray(group.items)) return;
@@ -212,6 +251,10 @@
     });
     var additions = [];
     function add(item) {
+      if (types && item.source === "remote" && item.caption.type === "static_content") {
+        var type = item.overlay_id.replace(/^caption:/, "");
+        if (types.indexOf(type) < 0) types.push(type);
+      }
       if (ids[item.overlay_id]) return;
       ids[item.overlay_id] = true;
       additions.push(item);
@@ -254,9 +297,30 @@
         }
       });
     });
-    if (additions.length) groups.push({ section: "Ghi chú mở rộng · 60s", items: additions });
+    if (additions.length) {
+      var group = groups.filter(function (candidate) {
+        return record(candidate) && candidate.section === "Ghi chú mở rộng · 60s" && Array.isArray(candidate.items);
+      })[0];
+      if (group) group.items = group.items.concat(additions);
+      else groups.push({ section: "Ghi chú mở rộng · 60s", items: additions });
+    }
+    if (types) entries.overlay_dynamic_captions = JSON.stringify(types);
     entries.overlay_items = JSON.stringify(groups);
     return additions.length;
+  }
+
+  function widgetPatch(entries) {
+    // Opt in using the complete widget variant module, not a second overlapping rule.
+    if (typeof $argument === "undefined" || $argument !== "gold-frame") return "off";
+    var changed = mergeEntry(entries, "widget_frame_event", {
+      uid: "cuong_gold_frame_v1",
+      url: "https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/assets/widget-gold.png?v=" + VERSION,
+      placement: "below",
+      use_local_time_zone: true,
+      start_at: "2024-01-01T00:00:00",
+      end_at: "2099-12-31T23:59:59"
+    });
+    return changed ? "gold-event-experimental" : "skipped-schema";
   }
 
   function firebasePatch(payload) {
@@ -265,6 +329,7 @@
       return false;
     }
     var entries = payload.entries;
+    configDiagnostics(entries);
     mergeEntry(entries, "feature_gates", {
       camera_roll: "enabled",
       longer_video: "enabled",
@@ -274,6 +339,7 @@
       camera_roll_video: "enabled",
       video: "enabled",
       long_captions: "enabled",
+      custom_widget_frames: "enabled",
       profile_badge: "enabled"
     });
     patchMedia(entries, "camera", {
@@ -310,6 +376,9 @@
       video_sound_enabled: "true",
       microphone_enabled: "true",
       camera_microphone_enabled: "true",
+      // Community-observed compatibility switch, not a verified Locket API contract.
+      mh_mic_enabled_v16: "true",
+      custom_widget_frames_enabled: "true",
       captions_enabled: "true",
       overlay_navigator_enabled: "true",
       music_caption_enabled: "true",
@@ -334,8 +403,9 @@
     });
     mergeEntry(entries, "overlays_v2_config", { suggestions_enabled: true });
     var added = captionPatch(entries);
+    var widget = widgetPatch(entries);
     if (payload.state === "NO_CHANGE") payload.state = "UPDATE";
-    log("firebase: v" + VERSION + " config target=" + VIDEO_SECONDS + "s; captions added=" + added);
+    log("firebase: v" + VERSION + " config target=" + VIDEO_SECONDS + "s; captions added=" + added + "; widget=" + widget);
     return true;
   }
 

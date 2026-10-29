@@ -23,6 +23,7 @@ function run(options = {}) {
     $done(value) { calls++; output = JSON.parse(JSON.stringify(value)); },
     console: { log(value) { logs.push(value); } }
   };
+  if (options.argument !== undefined) context.$argument = options.argument;
   if (!options.requestOnly) {
     context.$response = {
       status: options.status === undefined ? 200 : options.status,
@@ -174,7 +175,7 @@ const rules = moduleText.split("\n").filter(line => line.includes(" = type=")).m
 test("all module rules load an existing script in this repository", () => {
   assert.equal(rules.length, 3);
   for (const rule of rules) {
-    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/scripts/locket.js?v=2.0.0");
+    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/scripts/locket.js?v=2.1.0");
     assert.ok(fs.existsSync(path.join(root, "scripts/locket.js")));
   }
   assert.ok(!moduleText.includes("cloudfunctions"));
@@ -267,10 +268,73 @@ test("captions preserve server items, add 20 original templates and do not dupli
   const types = JSON.parse(result.body.entries.overlay_dynamic_captions);
   assert.ok(types.includes("future") && types.includes("poll") && types.includes("weather"));
   assert.equal(types.filter(type => type === "music").length, 1);
+  for (const item of items.filter(item => item.overlay_id.startsWith("caption:cuong_"))) {
+    assert.ok(types.includes(item.overlay_id.slice("caption:".length)), "remote caption ID must also be registered");
+  }
   assert.deepEqual(JSON.parse(result.body.entries.overlays_v2_config).unknown, { keep: true });
   const second = run({ url: firebase, payload: result.body });
   assert.deepEqual(second.body, result.body);
-  assert.ok(second.logs.some(line => line.includes("v2.0.0") && line.includes("captions added=0")));
+  assert.ok(second.logs.some(line => line.includes("v2.1.0") && line.includes("captions added=0")));
+});
+
+test("diagnostics expose only fixed schema/flag classifications, never response values", () => {
+  const entries = {
+    camera: '{"private":"never-print-body"}',
+    camera_roll: '{"audio_enabled":false}',
+    overlay_items: '[{"section":"private-group-name","items":[]}]',
+    video_sound_enabled: "false", microphone_enabled: "true",
+    mh_mic_enabled_v16: "private-flag-value",
+    private_key_name: "private-entry-value"
+  };
+  const result = run({ url: firebase, payload: { entries } });
+  const logs = result.logs.join("\n");
+  assert.ok(logs.includes("diag v2.1.0 input schema camera=object camera_roll=object"));
+  assert.ok(logs.includes("overlay_items=array(1)"));
+  assert.ok(logs.includes("video_sound_enabled=off microphone_enabled=on"));
+  assert.ok(logs.includes("mh_mic_enabled_v16=other"));
+  for (const secret of ["never-print-body", "private-group-name", "private-flag-value", "private_key_name", "private-entry-value"]) assert.ok(!logs.includes(secret));
+});
+
+test("missing media compatibility flags are added without changing 60s or existing types", () => {
+  const entries = run({ url: firebase, payload: { entries: {
+    camera: '{"microphone_enabled":"false"}',
+    camera_roll: '{"enabled":"false"}'
+  } } }).body.entries;
+  assert.equal(JSON.parse(entries.camera).microphone_enabled, "true");
+  assert.equal(JSON.parse(entries.camera).sound_enabled, true);
+  assert.equal(JSON.parse(entries.camera).max_duration, 60);
+  assert.equal(JSON.parse(entries.camera_roll).enabled, "true");
+  assert.equal(JSON.parse(entries.camera_roll).video_upload_enabled, true);
+  assert.equal(entries.mh_mic_enabled_v16, "true");
+});
+
+test("widget event is opt in, preserves unknown metadata and keeps asset in this repo", () => {
+  const event = '{"uid":"original","url":"https://example.test/original.png","extra":{"keep":true}}';
+  const payload = { entries: { widget_frame_event: event } };
+  assert.equal(run({ url: firebase, payload }).body.entries.widget_frame_event, event);
+  const result = run({ url: firebase, payload, argument: "gold-frame" });
+  const patched = JSON.parse(result.body.entries.widget_frame_event);
+  assert.equal(patched.uid, "cuong_gold_frame_v1");
+  assert.deepEqual(patched.extra, { keep: true });
+  assert.equal(patched.url, "https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/assets/widget-gold.png?v=2.1.0");
+  assert.equal(result.body.entries.video_max_duration, "60.0");
+  assert.ok(result.logs.some(line => line.includes("widget=gold-event-experimental")));
+  const asset = fs.readFileSync(path.join(root, "assets/widget-gold.png"));
+  assert.equal(asset.subarray(1, 4).toString(), "PNG");
+  assert.equal(asset.readUInt32BE(16), 1024);
+  assert.equal(asset.readUInt32BE(20), 1024);
+  assert.equal(asset[25], 6, "RGBA asset required");
+  const bad = run({ url: firebase, payload: { entries: { widget_frame_event: "{broken" } }, argument: "gold-frame" });
+  assert.equal(bad.body.entries.widget_frame_event, "{broken");
+  assert.ok(bad.logs.some(line => line.includes("widget=skipped-schema")));
+});
+
+test("widget variant is a complete module with a single explicit Firebase argument", () => {
+  const widget = fs.readFileSync(path.join(root, "locket60s-widget.sgmodule"), "utf8");
+  const lines = widget.split("\n").filter(line => line.includes(" = type="));
+  assert.equal(lines.length, 3);
+  assert.equal(lines.filter(line => line.includes("argument=gold-frame")).length, 1);
+  assert.ok(lines.find(line => line.startsWith("locket60_config =")).includes("argument=gold-frame"));
 });
 
 test("malformed caption lists do not break video configuration or get erased", () => {
@@ -293,8 +357,8 @@ test("rewritten response avoids stale HTTP caches without dropping unrelated hea
 test("new module and legacy install URL use the same versioned configuration", () => {
   const newModule = fs.readFileSync(path.join(root, "locket60s.sgmodule"), "utf8");
   assert.equal(newModule.replace("/main/locket60s.sgmodule", "/main/locket30s.sgmodule"), moduleText);
-  assert.equal(require("../package.json").version, "2.0.0");
-  assert.ok(newModule.includes("?v=2.0.0"));
+  assert.equal(require("../package.json").version, "2.1.0");
+  assert.ok(newModule.includes("?v=2.1.0"));
 });
 
 test("module URL rules route to the correct handler and exclude unrelated endpoints", () => {
