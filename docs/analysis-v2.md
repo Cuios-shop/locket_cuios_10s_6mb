@@ -1,3 +1,5 @@
+> Tài liệu lịch sử kế thừa từ repo gốc; xem README và UPGRADE-v3.md cho bản hiện tại.
+
 # Phân tích nâng cấp 60 giây, thư viện, ghi chú và âm thanh
 
 ## Thông tin đã có

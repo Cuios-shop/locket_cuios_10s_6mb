@@ -1,3 +1,5 @@
+> Tài liệu lịch sử kế thừa từ repo gốc; xem README và UPGRADE-v3.md cho bản hiện tại.
+
 # Trạng thái và chẩn đoán v2.1
 
 ## Bằng chứng từ thiết bị

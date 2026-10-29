@@ -3,9 +3,14 @@
 (function () {
   "use strict";
 
-  var TAG = "[locket30s-fixed] ";
-  var VERSION = "2.1.0";
+  var TAG = "[locket60s_amthanh_mic] ";
+  var VERSION = "3.0.0";
   var VIDEO_SECONDS = 60;
+  var VIDEO_BYTES = 100 * 1024 * 1024;
+  var ASSET_BASE = "https://raw.githubusercontent.com/Cuongqtx11/locket60s_amthanh_mic/main/assets/";
+  // BEGIN GENERATED CAPTION CATALOGUE
+  var CAPTIONS = [{"id":"brand","section":"Cuios • Bản quyền","background":"brand","items":[["certificate","mua chứng chỉ Cuios.shop","👑"],["copyright","Bản quyền Cuios","✨"],["cun","Cưn🍤","🍤"],["tom","tom11th5","💛"]]},{"id":"love","section":"Tình yêu","background":"love","items":[["choose","Tim tớ chọn cậu rồi","💗"],["withyou","Đi đâu cũng muốn có cậu","🫶"],["soft","Gặp cậu là ngày đẹp","🌷"],["little","Thương cậu thêm một chút","💕"],["home","Bên cậu là thấy nhà","🏡"],["hug","Gửi cậu một cái ôm","🤍"],["miss","Nhớ cậu, không cần lý do","💌"],["smile","Cậu cười là tớ thua","🥰"],["wait","Chừa một chỗ cạnh tớ nhé","💞"],["simple","Thích cậu, thế thôi","💘"]]},{"id":"joy","section":"Vui vẻ","background":"joy","items":[["enough","Hôm nay vui vừa đủ","🌞"],["vitamin","Nạp một chút vitamin cười","🍊"],["happy","Đang bận yêu đời","🌈"],["broadcast","Niềm vui đang phát sóng","📻"],["sun","Mang nắng về nhà","☀️"],["luck","May mắn ghé chơi rồi","🍀"],["photo","Chụp vội một ngày xinh","📸"],["weekend","Cuối tuần nằm trong tim","🎈"],["save","Một ngày đáng lưu lại","✨"],["laugh","Cười lên, ảnh đang đẹp","😆"]]},{"id":"mood","section":"Cảm xúc","background":"mood","items":[["rain","Hôm nay lòng hơi mưa","🌧️"],["quiet","Cho tớ yên một chút","🌙"],["thought","Có vài điều chưa nói","💭"],["slow","Đang học cách chậm lại","🍃"],["hug","Một cái ôm là đủ","🫂"],["tired","Hết pin, cần được thương","🪫"],["okay","Không ổn cũng không sao","🤍"],["hope","Ngày mai mình thử lại","🌅"],["memory","Có người nằm trong ký ức","🎞️"],["feeling","Chẳng biết gọi tên cảm xúc","🫧"]]},{"id":"tease","section":"Trêu đùa","background":"tease","items":[["cute","Xinh thế này ai chịu nổi","😎"],["seen","Xem rồi thì nhớ tớ đi","👀"],["crush","Đẹp vậy mà vẫn độc thân","😌"],["heart","Lỡ xem là phải thả tim","😏"],["busy","Bận đáng yêu, lát nhắn","💅"],["snack","Không giận, chỉ thiếu trà sữa","🧋"],["signal","Phát tín hiệu: nhớ bạn","📡"],["sleep","Online đó, nhưng buồn ngủ","😴"],["model","Camera thường, người phi thường","🤳"],["notice","Thông báo: cần được cưng","📣"]]},{"id":"gentle","section":"Dịu dàng","background":"gentle","items":[["breathe","Hít thở rồi mình đi tiếp","🌿"],["coffee","Cà phê ấm, lòng nhẹ hơn","☕"],["small","Gom niềm vui nhỏ mỗi ngày","🪴"],["enough","Mình đã cố gắng đủ rồi","🌼"],["kind","Dịu dàng với mình một chút","🕊️"],["now","Ở đây, ngay lúc này","🍵"],["sky","Ngước lên, trời vẫn xanh","☁️"],["rest","Nghỉ một nhịp cũng được","🛋️"],["bloom","Mỗi người một mùa nở hoa","🌸"],["night","Ngủ ngon, mai mình lại xinh","🌙"]]}];
+  // END GENERATED CAPTION CATALOGUE
   var RC = /^https:\/\/api\.revenuecat\.com\/v1\/(?:receipts|subscribers\/[^/?#]+)\/?(?:\?[^#]*)?$/i;
   var FIREBASE = /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/namespaces\/firebase:fetch(?:\?[^#]*)?$/i;
 
@@ -165,6 +170,26 @@
       "custom_widget_frames_enabled"].map(function (key) {
       return key + "=" + flag(entries[key]);
     }).join(" "));
+    var library;
+    try { library = typeof entries.camera_roll === "string" ? JSON.parse(entries.camera_roll) : entries.camera_roll; } catch (_) { library = null; }
+    var report = [];
+    function inspect(object, path, depth) {
+      if (!record(object) || depth > 4 || report.length >= 8) return;
+      var limits = { path: path };
+      ["max_duration", "video_max_duration", "maximum_duration", "trim_max_duration",
+        "max_duration_ms", "max_file_size", "max_upload_bytes", "max_size_bytes", "max_size_mb"].forEach(function (key) {
+        if (typeof object[key] === "number" || (typeof object[key] === "string" && /^\d+(?:\.\d+)?$/.test(object[key]))) {
+          var number = Number(object[key]);
+          if (isFinite(number) && number >= 0 && number <= 1e12) limits[key] = number;
+        }
+      });
+      if (Object.keys(limits).length > 1) report.push(limits);
+      ["video", "upload", "recording", "trim", "limits", "free", "gold", "default"].forEach(function (key) {
+        inspect(object[key], path + "." + key, depth + 1);
+      });
+    }
+    inspect(library, "camera_roll", 0);
+    log("diag v" + VERSION + " input library limits " + JSON.stringify(report));
   }
 
   function patchMedia(entries, key, defaults) {
@@ -215,112 +240,84 @@
       if (typeof config.audio.enabled === "boolean") config.audio.enabled = true;
       else if (config.audio.enabled === "true" || config.audio.enabled === "false") config.audio.enabled = "true";
     }
+    function limits(object, depth) {
+      ["gold_max_duration", "goldMaxDuration", "max_duration", "maxDuration", "video_max_duration", "videoMaxDuration",
+        "maximum_duration", "maximumDuration", "trim_max_duration", "trimMaxDuration", "recording_duration",
+        "max_length", "video_duration", "video_upload_max_duration", "camera_roll_max_duration", "camera_roll_video_max_duration"].forEach(function (name) {
+        if (Object.prototype.hasOwnProperty.call(object, name)) object[name] = VIDEO_SECONDS;
+      });
+      ["max_duration_ms", "video_max_duration_ms", "gold_max_duration_ms", "recording_duration_ms", "trim_max_duration_ms"].forEach(function (name) {
+        if (Object.prototype.hasOwnProperty.call(object, name)) object[name] = VIDEO_SECONDS * 1000;
+      });
+      ["max_file_size", "max_upload_bytes", "max_size_bytes", "max_file_size_bytes", "video_max_size_bytes", "max_video_size_bytes"].forEach(function (name) {
+        if (Object.prototype.hasOwnProperty.call(object, name)) {
+          object[name] = typeof object[name] === "string" ? String(VIDEO_BYTES) : VIDEO_BYTES;
+        }
+      });
+      ["max_file_size_mb", "max_size_mb", "max_upload_mb"].forEach(function (name) {
+        if (Object.prototype.hasOwnProperty.call(object, name)) object[name] = typeof object[name] === "string" ? "100" : 100;
+      });
+      audioFlags(object);
+      if (record(object.audio)) audioFlags(object.audio);
+      if (depth >= 4) return;
+      ["video", "upload", "recording", "trim", "limits", "free", "gold", "default"].forEach(function (name) {
+        if (record(object[name])) limits(object[name], depth + 1);
+      });
+    }
+    limits(config, 0);
     entries[key] = JSON.stringify(config);
   }
 
-  function arrayEntry(entries, key) {
-    if (entries[key] === undefined) return [];
-    try {
-      var value = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key];
-      if (Array.isArray(value)) return value;
-    } catch (_) { /* Keep the original entry if its schema is unknown. */ }
-    log("firebase: skipped malformed array entry " + key);
-    return null;
-  }
-
   function captionPatch(entries) {
-    var nativeTypes = ["standard", "link", "review", "poll", "music", "location", "weather",
-      "time", "streak", "star_sign", "color_palette", "locket_count"];
-    var types = arrayEntry(entries, "overlay_dynamic_captions");
-    if (types) {
-      nativeTypes.forEach(function (type) {
-        if (types.indexOf(type) < 0) types.push(type);
-      });
-    }
-    var groups = arrayEntry(entries, "overlay_items");
-    if (!groups) {
-      if (types) entries.overlay_dynamic_captions = JSON.stringify(types);
-      return 0;
-    }
-    var ids = Object.create(null);
-    groups.forEach(function (group) {
-      if (!record(group) || !Array.isArray(group.items)) return;
-      group.items.forEach(function (item) {
-        if (record(item) && typeof item.overlay_id === "string") ids[item.overlay_id] = true;
-      });
+    // Replace the old picker catalogue as requested; never edit posted moments.
+    var types = [];
+    var count = 0;
+    var colors = {
+      brand: ["#3F2B13", "#77541F"], love: ["#59223F", "#342044"],
+      joy: ["#6A3620", "#503058"], mood: ["#252B56", "#432B59"],
+      tease: ["#4E2668", "#243E67"], gentle: ["#174B45", "#293F54"]
+    };
+    var groups = CAPTIONS.map(function (group) {
+      return {
+        section: group.section,
+        items: group.items.map(function (template, index) {
+          var type = "cuios_" + group.id + "_" + template[0];
+          var background = group.background === "brand" ? "brand" : group.background + "_" + (index % 2 + 1);
+          types.push(type);
+          count++;
+          return {
+            overlay_id: "caption:" + type,
+            source: "remote",
+            caption: {
+              type: "static_content", text: template[1],
+              localized_text: { vi: template[1], en: template[1] },
+              icon: { type: "emoji", data: template[2] },
+              background: {
+                colors: colors[group.background],
+                image: { type: "image", source: "url", data: ASSET_BASE + "captions/" + background + ".png?v=" + VERSION }
+              },
+              text_color: "#FFFFFF", max_lines: 1
+            }
+          };
+        })
+      };
     });
-    var additions = [];
-    function add(item) {
-      if (types && item.source === "remote" && item.caption.type === "static_content") {
-        var type = item.overlay_id.replace(/^caption:/, "");
-        if (types.indexOf(type) < 0) types.push(type);
-      }
-      if (ids[item.overlay_id]) return;
-      ids[item.overlay_id] = true;
-      additions.push(item);
-    }
-    nativeTypes.forEach(function (type) {
-      add({ overlay_id: "caption:" + type, source: "local", caption: { type: type } });
-    });
-    // Original text-only templates: no external assets, scripts or tracking URLs.
-    [
-      ["hello", "Xin chào ngày mới", "☀️"],
-      ["coffee", "Một chút cà phê", "☕"],
-      ["study", "Đang học bài", "📚"],
-      ["focus", "Giờ tập trung", "🎯"],
-      ["work", "Một ngày làm việc", "💼"],
-      ["break", "Nghỉ một chút nhé", "🍃"],
-      ["food", "Hôm nay ăn gì?", "🍜"],
-      ["music", "Bật bài mình thích", "🎵"],
-      ["rain", "Ngày mưa thật chậm", "🌧️"],
-      ["sunset", "Hẹn với hoàng hôn", "🌇"],
-      ["night", "Chúc bạn ngủ ngon", "🌙"],
-      ["weekend", "Cuối tuần của mình", "🎈"],
-      ["friends", "Có bạn là vui", "🫶"],
-      ["miss", "Gửi bạn một chút nhớ", "💌"],
-      ["happy", "Niềm vui hôm nay", "✨"],
-      ["calm", "Bình yên một chút", "🌿"],
-      ["travel", "Đi tìm một nơi mới", "🧳"],
-      ["gym", "Thêm một chút cố gắng", "💪"],
-      ["birthday", "Một ngày thật đặc biệt", "🎂"],
-      ["memory", "Giữ lại khoảnh khắc này", "📸"]
-    ].forEach(function (template, index) {
-      var palettes = [["#243B55", "#141E30"], ["#6A3093", "#A044FF"], ["#134E5E", "#237A57"]];
-      add({
-        overlay_id: "caption:cuong_" + template[0],
-        source: "remote",
-        caption: {
-          type: "static_content", text: template[1],
-          icon: { type: "emoji", data: template[2] },
-          background: { colors: palettes[index % palettes.length] },
-          text_color: "#FFFFFF", max_lines: 1
-        }
-      });
-    });
-    if (additions.length) {
-      var group = groups.filter(function (candidate) {
-        return record(candidate) && candidate.section === "Ghi chú mở rộng · 60s" && Array.isArray(candidate.items);
-      })[0];
-      if (group) group.items = group.items.concat(additions);
-      else groups.push({ section: "Ghi chú mở rộng · 60s", items: additions });
-    }
-    if (types) entries.overlay_dynamic_captions = JSON.stringify(types);
     entries.overlay_items = JSON.stringify(groups);
-    return additions.length;
+    entries.overlay_dynamic_captions = JSON.stringify(types);
+    return count;
   }
 
   function widgetPatch(entries) {
-    // Opt in using the complete widget variant module, not a second overlapping rule.
-    if (typeof $argument === "undefined" || $argument !== "gold-frame") return "off";
+    var mode = typeof $argument === "string" ? $argument : "";
+    var theme = { "aura-frame": "aura", "gold-frame": "gold", "rose-frame": "rose" }[mode];
+    if (!theme) return "off";
     var changed = mergeEntry(entries, "widget_frame_event", {
-      uid: "cuong_gold_frame_v1",
-      url: "https://raw.githubusercontent.com/Cuongqtx11/locket30s-fixed/main/assets/widget-gold.png?v=" + VERSION,
-      placement: "below",
-      use_local_time_zone: true,
-      start_at: "2024-01-01T00:00:00",
-      end_at: "2099-12-31T23:59:59"
+      uid: "cuios_" + theme + "_frame_v3",
+      url: ASSET_BASE + "widget-" + theme + ".png?v=" + VERSION,
+      placement: "below", use_local_time_zone: true,
+      start_at: "2024-01-01T00:00:00", end_at: "2099-12-31T23:59:59"
     });
-    return changed ? "gold-event-experimental" : "skipped-schema";
+    return changed ? theme + "-event-experimental" : "skipped-schema";
   }
 
   function firebasePatch(payload) {
@@ -360,10 +357,16 @@
       trim_max_duration: VIDEO_SECONDS,
       trimMaxDuration: VIDEO_SECONDS,
       camera_roll_max_duration: VIDEO_SECONDS,
-      camera_roll_video_max_duration: VIDEO_SECONDS
+      camera_roll_video_max_duration: VIDEO_SECONDS,
+      max_file_size: VIDEO_BYTES,
+      max_upload_bytes: VIDEO_BYTES,
+      max_size_bytes: VIDEO_BYTES
     });
     // Do not invent a video_config schema when the server does not provide one.
     patchMedia(entries, "video_config");
+    ["camera_roll_video_config", "camera_roll_video_upload_config", "video_upload_config"].forEach(function (key) {
+      patchMedia(entries, key);
+    });
     Object.assign(entries, {
       camera_roll_preview_enabled: "true",
       camera_roll_enabled: "true",
@@ -401,11 +404,17 @@
       "can_upload_video", "longerVideosEnabled"].forEach(function (key) {
       if (entries[key] !== undefined && /^(?:true|false)$/.test(String(entries[key]))) entries[key] = "true";
     });
+    ["max_file_size", "max_upload_bytes", "max_size_bytes", "video_max_size_bytes", "camera_roll_video_max_size_bytes"].forEach(function (key) {
+      entries[key] = String(VIDEO_BYTES);
+    });
+    ["video_upload_max_size_mb", "camera_roll_max_size_mb", "max_file_size_mb"].forEach(function (key) {
+      if (entries[key] !== undefined) entries[key] = "100";
+    });
     mergeEntry(entries, "overlays_v2_config", { suggestions_enabled: true });
     var added = captionPatch(entries);
     var widget = widgetPatch(entries);
     if (payload.state === "NO_CHANGE") payload.state = "UPDATE";
-    log("firebase: v" + VERSION + " config target=" + VIDEO_SECONDS + "s; captions added=" + added + "; widget=" + widget);
+    log("firebase: v" + VERSION + " config target=" + VIDEO_SECONDS + "s; upload-bytes=" + VIDEO_BYTES + "; captions=" + added + "; widget=" + widget);
     return true;
   }
 
