@@ -14,5 +14,6 @@ jobs:
           node-version: '22'
       - run: npm run check
       - run: npm test
+      - run: npm run test:protected
       - run: python3 -m unittest discover -s test -p test_security_audit.py
       - run: python3 tools/audit_repository.py

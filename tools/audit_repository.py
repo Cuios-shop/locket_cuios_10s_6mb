@@ -12,7 +12,7 @@ PATTERNS = {
     "aws_access_key": re.compile(rb"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
     "credential_url": re.compile(rb"https?://[^\s/:]+:[^\s/@]+@"),
 }
-EXTENSIONS = {".js", ".py", ".md", ".json", ".sgmodule", ".yml", ".yaml", ".txt", ".conf", ".env", ".pem", ".key"}
+EXTENSIONS = {".js", ".cjs", ".mjs", ".py", ".md", ".json", ".sgmodule", ".yml", ".yaml", ".txt", ".conf", ".env", ".pem", ".key"}
 OFFICIAL_OWNERS = {"firebase", "revenuecat", "actions"}
 
 

@@ -34,3 +34,7 @@ python3 tools/audit_repository.py --history
 CI chạy quét bản hiện tại. Các text blob lịch sử chỉ được quét đầy đủ khi checkout có đủ lịch sử. Báo cáo xuất số lượng và vị trí, không xuất giá trị khớp. Thư mục private-dist, security-reports, file bundle và một số định dạng chứng chỉ/khóa đã được thêm vào gitignore. Không có file token/credential mới được tạo trong repo.
 
 Nếu một token thật từng được gửi qua chat hoặc xuất hiện công khai, cần thu hồi token đó trong tài khoản phát hành và tạo credential mới có phạm vi nhỏ hơn; xóa chữ khỏi file không vô hiệu hóa token.
+
+## Protected P1
+
+Đã thêm bản phân phối làm rối và ghi chú quyền tác giả trung thực tại [PROTECTED.md](PROTECTED.md). Giữ nguồn dễ đọc và giấy phép, không tạo mật khẩu AI hoặc đổi quyền repo. Mã làm rối vẫn có thể được phân tích và người có link vẫn tải được. Đây là biện pháp tăng công đọc, không thay thế quyền truy cập server.

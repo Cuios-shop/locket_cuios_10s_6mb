@@ -1,5 +1,11 @@
 # Cuios v4.1.0 · Quay 60s / Nhập 10s, 6 MiB
 
+## Bản JS làm rối Protected P1
+
+[Module Protected P1](https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_10s_6mb/main/locket60s_10s_6mb_protected.sgmodule) có cùng engine, giới hạn video và ghi chú của bản này, dùng artifact làm rối riêng. Chỉ bật một module Locket; thử Protected trên máy trước khi quyết định dùng lâu dài.
+
+Đã chạy lại toàn bộ kiểm thử trên bản Protected trong sandbox. Chưa kiểm chứng trên iPhone. **Đây không phải mã hóa chống sao chép tuyệt đối; repo vẫn public và còn file nguồn dễ đọc/lịch sử.** Ghi chú AI/câu tự nhận không tạo khóa xác thực. Xem [PROTECTED.md](PROTECTED.md) và [AI_NOTICE.md](AI_NOTICE.md).
+
 Repo này lưu riêng bản v4.1.0 từ commit `4b3ebce` theo yêu cầu giữ hai dự án. Runtime JS giữ nguyên từng byte và SHA-256. Module tải runtime từ repo này; các URL artwork trong JS vẫn dùng repo `locket_cuios_stable` được giữ lại.
 
 Bản 60s/100 MiB được người dùng xác nhận hoạt động nằm ở [locket_cuios_stable](https://github.com/Cuongqtx11/locket_cuios_stable).

@@ -8,11 +8,14 @@ const release = require("../release.json");
 
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "scripts/locket.js"), "utf8");
+const protectedMode = process.env.CUIOS_PROTECTED_RUNTIME === "1";
+const protectedRelease = protectedMode ? JSON.parse(fs.readFileSync(path.join(root, "protected-release.json"), "utf8")) : null;
+const runtimeSource = protectedMode ? fs.readFileSync(path.join(root, protectedRelease.runtime), "utf8") : source;
 const moduleText = fs.readFileSync(path.join(root, "locket_cuios_stable.sgmodule"), "utf8");
 const rc = "https://api.revenuecat.com/v1/subscribers/test-user";
 const firebase = "https://firebaseremoteconfig.googleapis.com/v1/projects/locket-4252a/namespaces/firebase:fetch";
 
-function run(options = {}) {
+function run(options = {}, runtime = runtimeSource) {
   let calls = 0;
   let output;
   const logs = [];
@@ -36,7 +39,7 @@ function run(options = {}) {
         : options.body
     };
   }
-  vm.runInNewContext(source, context, { timeout: 1000 });
+  vm.runInNewContext(runtime, context, { timeout: 1000, contextCodeGeneration: { strings: false, wasm: false } });
   assert.equal(calls, 1, "$done must be called exactly once");
   return { output, logs, body: output.body ? JSON.parse(output.body) : undefined };
 }
