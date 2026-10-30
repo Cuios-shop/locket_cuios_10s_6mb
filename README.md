@@ -1,14 +1,18 @@
-# Cuios v4.1.0 · Quay 60s / Nhập 10s, 6 MiB
+# Cuios v4.1.1 · Quay 60s / Nhập 10s, 6 MiB
+
+## Chuyển sang Organization Cuios.shop
+
+Tên hiển thị là **Cuios.shop**, tên dùng trong URL là **Cuios-shop**. Phiên bản 4.1.1 cập nhật URL module/JS/ảnh sang Organization và nhãn phát hành; giữ logic media, nội dung/nền ghi chú và khung widget. Repo vẫn public để Shadowrocket tải được. Lịch sử và artifact cũ được giữ, không phải tạo lại repo.
 
 ## Bản JS làm rối Protected P1
 
-[Module Protected P1](https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_10s_6mb/main/locket60s_10s_6mb_protected.sgmodule) có cùng engine, giới hạn video và ghi chú của bản này, dùng artifact làm rối riêng. Chỉ bật một module Locket; thử Protected trên máy trước khi quyết định dùng lâu dài.
+[Module Protected P1](https://raw.githubusercontent.com/Cuios-shop/locket_cuios_10s_6mb/main/locket60s_10s_6mb_protected.sgmodule) có cùng engine, giới hạn video và ghi chú của bản này, dùng artifact làm rối riêng. Chỉ bật một module Locket; thử Protected trên máy trước khi quyết định dùng lâu dài.
 
 Đã chạy lại toàn bộ kiểm thử trên bản Protected trong sandbox. Chưa kiểm chứng trên iPhone. **Đây không phải mã hóa chống sao chép tuyệt đối; repo vẫn public và còn file nguồn dễ đọc/lịch sử.** Ghi chú AI/câu tự nhận không tạo khóa xác thực. Xem [PROTECTED.md](PROTECTED.md) và [AI_NOTICE.md](AI_NOTICE.md).
 
-Repo này lưu riêng bản v4.1.0 từ commit `4b3ebce` theo yêu cầu giữ hai dự án. Runtime JS giữ nguyên từng byte và SHA-256. Module tải runtime từ repo này; các URL artwork trong JS vẫn dùng repo `locket_cuios_stable` được giữ lại.
+Repo này lưu riêng nhánh v4.1.0 bắt đầu từ commit `4b3ebce`; bản hiện tại là v4.1.1 sau khi chuyển sang Organization. Engine kế thừa v4.1.0; từ v4.1.1 chỉ cập nhật URL tài nguyên và nhãn phiên bản, nên SHA-256 runtime thay đổi. Module tải runtime từ repo này; các URL artwork trong JS vẫn dùng repo `locket_cuios_stable` được giữ lại.
 
-Bản 60s/100 MiB được người dùng xác nhận hoạt động nằm ở [locket_cuios_stable](https://github.com/Cuongqtx11/locket_cuios_stable).
+Bản 60s/100 MiB được người dùng xác nhận hoạt động nằm ở [locket_cuios_stable](https://github.com/Cuios-shop/locket_cuios_stable).
 
 Bản cập nhật theo yêu cầu mới: **quay 60 giây; video từ thư viện tối đa 10 giây và 6 MiB (6.291.456 bytes)**. Giữ 4 ghi chú thương hiệu và 50 mẫu mới. Các repo lịch sử và runtime v4.0.0 đã phát hành không bị sửa.
 
@@ -19,10 +23,10 @@ Bản cập nhật theo yêu cầu mới: **quay 60 giây; video từ thư việ
 Tắt các module Locket khác trong cấu hình đang dùng. Thêm đúng module mới, chỉ bật một module:
 
 ```text
-https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_10s_6mb/main/locket60s_10s_6mb.sgmodule
+https://raw.githubusercontent.com/Cuios-shop/locket_cuios_10s_6mb/main/locket60s_10s_6mb.sgmodule
 ```
 
-Bật HTTPS Decryption/MITM và CA đã được tin cậy. Bật kết nối Shadowrocket, vuốt đóng Locket rồi mở lại. Không cần gỡ app hay reset quyền riêng tư. Hai tên module cũ trong repo này cũng dùng cùng runtime v4.1.0, nhưng không cài chồng.
+Bật HTTPS Decryption/MITM và CA đã được tin cậy. Bật kết nối Shadowrocket, vuốt đóng Locket rồi mở lại. Không cần gỡ app hay reset quyền riêng tư. Hai tên module cũ trong repo này cũng dùng cùng runtime v4.1.1, nhưng không cài chồng.
 
 ## Thay đổi cụ thể
 
@@ -47,7 +51,7 @@ Khi Shadowrocket đang bật, mở Safari:
 https://firebaseremoteconfig.googleapis.com/cuios-check?view=status
 ```
 
-Chỉ trang mang chữ **Cuios**, **v4.1.0** và đúng mục tiêu quay 60s/nhập 10s/6 MiB là kết quả hook mới. Lỗi chứng chỉ, 404/Google hoặc nội dung v4.0.0 không phải thành công. Trang này được script trả cục bộ; không truy vấn account bên ngoài.
+Chỉ trang mang chữ **Cuios**, **v4.1.1** và đúng mục tiêu quay 60s/nhập 10s/6 MiB là kết quả hook mới. Lỗi chứng chỉ, 404/Google hoặc nội dung v4.0.0 không phải thành công. Trang này được script trả cục bộ; không truy vấn account bên ngoài.
 
 Mở Locket, vào camera/thư viện rồi quay lại trang và tải lại. Chọn **Xem báo cáo chẩn đoán**, hoặc mở:
 
@@ -59,7 +63,7 @@ Gửi nội dung báo cáo nếu vẫn quay 3s/không mic/không ghi chú. Báo 
 
 | Kết quả | Ý nghĩa |
 | --- | --- |
-| Không hiện trang Cuios v4.1.0 | Chưa xác nhận đúng runtime/hook/MITM hoạt động |
+| Không hiện trang Cuios v4.1.1 | Chưa xác nhận đúng runtime/hook/MITM hoạt động |
 | HTTPS trình duyệt được, không có request Firebase | Chưa quan sát được Locket fetch qua script; cần đối chiếu cấu hình, app cache hoặc đường mạng |
 | `patched` / `partial` | Đã gửi response cấu hình sửa; chưa chứng minh app áp dụng hoặc tính năng chạy |
 | `no_entries` / `http_error` / `unexpected_payload` | Server/response chưa thể patch; xem thời gian và mã HTTP |

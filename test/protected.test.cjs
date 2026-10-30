@@ -36,6 +36,9 @@ test("protected modules preserve all original hook patterns and settings", () =>
     assert.equal(new Set(paths).size, 1);
     assert.ok(paths[0].endsWith(protectedRelease.runtime));
     assert.ok(protectedModule.includes("/" + filename));
+    assert.ok(!protectedModule.includes("Cuongqtx11"));
+    assert.match(protectedModule, /^#!author=Cuios\.shop$/m);
+    assert.ok(paths[0].startsWith("https://raw.githubusercontent.com/Cuios-shop/"));
   }
 });
 

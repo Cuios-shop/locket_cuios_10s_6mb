@@ -1,6 +1,6 @@
 {
   "name": "locket_cuios_stable",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "private": true,
   "description": "Locket: mục tiêu quay 60s, nhập video 10s/6 MiB, mic và 54 ghi chú; có chẩn đoán",
   "scripts": {

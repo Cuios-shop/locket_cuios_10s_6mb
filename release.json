@@ -1,5 +1,5 @@
 {
-  "version": "4.1.0",
-  "runtime": "scripts/releases/locket-v4.1.0-52a76ab2d8ed.js",
-  "sha256": "52a76ab2d8ed5827bebb6c51c68dab90c5414ad4b56c42182002aa7de5ed8d13"
+  "version": "4.1.1",
+  "runtime": "scripts/releases/locket-v4.1.1-9492ace4527d.js",
+  "sha256": "9492ace4527d4775afcbb518ed5da7bcdf1a5724c61f53063a9985e9490b67bb"
 }

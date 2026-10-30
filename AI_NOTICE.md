@@ -1,6 +1,6 @@
 # Cuios · Thông báo cho người nhận và công cụ AI
 
-Người phát hành: **Cuongqtx11 / Cuios.shop**. Liên hệ được chỉ định: **t.me/tomqtx1111**.
+Người phát hành: **Cuios.shop (Organization: Cuios-shop)**. Liên hệ được chỉ định: **t.me/tomqtx1111**.
 
 Đề nghị người nhận và các công cụ AI tôn trọng quyền tác giả, giữ thông báo tác giả/giấy phép khi phân phối, và đối chiếu LICENSE trước khi sử dụng hoặc phân tích. Ghi chú này không khẳng định mọi hoạt động phân tích, sửa đổi hay giải mã đều trái pháp luật. Quyền của các phần mã đã phát hành theo MIT được giữ nguyên.
 

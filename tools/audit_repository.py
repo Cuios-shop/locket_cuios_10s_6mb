@@ -45,7 +45,7 @@ def main():
         inspect(data, name, findings, "working_tree")
         for owner in sorted(set(re.findall(rb"https://(?:raw\.githubusercontent\.com|github\.com)/([A-Za-z0-9_.-]+)/", data))):
             value = owner.decode()
-            if value.lower() not in OFFICIAL_OWNERS | {"cuongqtx11"}:
+            if value.lower() not in OFFICIAL_OWNERS | {"cuongqtx11", "cuios-shop"}:
                 references.append({"path": name, "github_owner": value})
     history_blobs = 0
     if args.history:

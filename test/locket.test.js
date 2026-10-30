@@ -181,7 +181,7 @@ const rules = moduleText.split("\n").filter(line => line.includes(" = type=")).m
 test("all module rules load an existing script in this repository", () => {
   assert.equal(rules.length, 5);
   for (const rule of rules) {
-    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_10s_6mb/main/" + release.runtime);
+    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuios-shop/locket_cuios_10s_6mb/main/" + release.runtime);
     assert.ok(fs.existsSync(path.join(root, "scripts/locket.js")));
   }
   assert.ok(!moduleText.includes("cloudfunctions"));
@@ -286,7 +286,7 @@ test("diagnostics expose only fixed schema/flag classifications, never response 
   };
   const result = run({ url: firebase, payload: { entries } });
   const logs = result.logs.join("\n");
-  assert.ok(logs.includes("diag v4.1.0 input schema camera=object camera_roll=object"));
+  assert.ok(logs.includes("diag v4.1.1 input schema camera=object camera_roll=object"));
   assert.ok(logs.includes("overlay_items=array(1)"));
   assert.ok(logs.includes("video_sound_enabled=off microphone_enabled=on"));
   assert.ok(logs.includes("mh_mic_enabled_v16=other"));
@@ -314,7 +314,7 @@ test("widget event is opt in, preserves unknown metadata and keeps asset in this
   const patched = JSON.parse(result.body.entries.widget_frame_event);
   assert.equal(patched.uid, "cuios_gold_frame_v3");
   assert.deepEqual(patched.extra, { keep: true });
-  assert.equal(patched.url, "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/assets/widget-gold.png?v=4.1.0");
+  assert.equal(patched.url, "https://raw.githubusercontent.com/Cuios-shop/locket_cuios_stable/main/assets/widget-gold.png?v=4.1.1");
   assert.equal(result.body.entries.video_max_duration, "60.0");
   assert.ok(result.logs.some(line => line.includes("widget=gold-event-experimental")));
   const asset = fs.readFileSync(path.join(root, "assets/widget-gold.png"));
@@ -398,7 +398,7 @@ test("Firebase recognizes only Locket project IDs for mutation and observes othe
 test("Firebase ETag follows patched content, stays stable across repeat fetches and differs by theme", () => {
   const first = run({ url: firebase, payload: { state: "UPDATE", entries: { camera: '{"max_duration":5}' } }, responseHeaders: { etag: '"server-static"' } });
   const second = run({ url: firebase, payload: first.body, responseHeaders: { ETag: '"server-static"' } });
-  assert.match(first.output.headers.etag, /^"cuios-4\.1\.0-/);
+  assert.match(first.output.headers.etag, /^"cuios-4\.1\.1-/);
   assert.notEqual(first.output.headers.etag, '"server-static"');
   assert.equal(first.output.headers.etag, second.output.headers.etag);
   const gold = run({ url: firebase, payload: first.body, argument: "gold-frame" });
@@ -443,7 +443,7 @@ test("NO_CHANGE without complete entries is reported, never fabricated from old 
 test("local status proves runtime execution but never claims native features or activation were verified", () => {
   const store = memoryStore();
   const before = report(store);
-  assert.equal(before.runtime, "4.1.0");
+  assert.equal(before.runtime, "4.1.1");
   assert.deepEqual(before.observed, {});
   assert.equal(before.deviceFeaturesVerified, false);
   assert.deepEqual(before.recipe, { recordingSeconds: 60, uploadSeconds: 10, uploadBytes: 6291456, captions: 54 });
@@ -531,7 +531,7 @@ test("HTTPS self-check is local and records browser transport separately from ac
     assert.equal(rules.filter(rule => rule.type === "http-request" && rule.pattern.test(url)).length, 1);
     const result = run({ url, requestOnly: true, store });
     assert.equal(result.output.response.status, 200);
-    assert.ok(result.output.response.body.includes("Cuios · HTTPS check v4.1.0"));
+    assert.ok(result.output.response.body.includes("Cuios · HTTPS check v4.1.1"));
   }
   const state = report(store).observed;
   assert.equal(state.https_firebase.action, "https_hook_seen");
@@ -587,7 +587,7 @@ test("all caption backgrounds resolve to local PNG assets and include fallback c
     assert.ok(background.colors.every(color => /^#[0-9A-F]{6}$/.test(color)));
     const url = new URL(background.image.data);
     assert.equal(url.hostname, "raw.githubusercontent.com");
-    assert.ok(url.pathname.startsWith("/Cuongqtx11/locket_cuios_stable/main/assets/captions/"));
+    assert.ok(url.pathname.startsWith("/Cuios-shop/locket_cuios_stable/main/assets/captions/"));
     const file = url.pathname.split("/main/")[1];
     assert.ok(fs.existsSync(path.join(root, file)), file);
     uniqueAssets.add(file);
@@ -656,7 +656,7 @@ test("real HTTPS diagnostic routes export the same private-data-free report with
   const url = "https://firebaseremoteconfig.googleapis.com/cuios-check?view=report";
   const response = run({ url, requestOnly: true, store }).output.response;
   const parsed = JSON.parse(response.body);
-  assert.equal(parsed.runtime, "4.1.0");
+  assert.equal(parsed.runtime, "4.1.1");
   assert.deepEqual(parsed.recipe, { recordingSeconds: 60, uploadSeconds: 10, uploadBytes: 6291456, captions: 54 });
   assert.equal(parsed.deviceFeaturesVerified, false);
   assert.ok(parsed.observed.firebase.inputMediaFields.some(field => field.path === "entries" && field.field === "mh_mic_enabled_v99" && field.flag === "off"));

@@ -1,5 +1,12 @@
 # Thay đổi
 
+## 4.1.1 — chuyển đường phát hành sang Cuios-shop
+
+- Cùng repo được chuyển chủ sở hữu, giữ lịch sử và mọi artifact cũ.
+- Module/JS/ảnh dùng URL Organization; nhãn tác giả module là Cuios.shop.
+- Giữ logic quay/upload, mic, ghi chú và widget; không tự bật private.
+- Dựng lại runtime chuẩn/protected với hash mới; thông báo LICENSE gốc giữ nguyên.
+
 ## 4.1.0 — quay 60s, nhập 10s/6 MiB
 
 - Tách ngữ cảnh recording/upload/trim và trần byte nhập; giữ kiểu dữ liệu, đơn vị, codec và trường chưa rõ nghĩa.

@@ -4,7 +4,7 @@ import hashlib,json
 
 root=Path(__file__).resolve().parents[1]
 version=json.loads((root/'package.json').read_text())['version']
-base='https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_10s_6mb/main/'
+base='https://raw.githubusercontent.com/Cuios-shop/locket_cuios_10s_6mb/main/'
 source=(root/'scripts/locket.js').read_bytes()
 digest=hashlib.sha256(source).hexdigest()
 relative='scripts/releases/locket-v'+version+'-'+digest[:12]+'.js'
@@ -24,7 +24,7 @@ for name,argument in variants.items():
     option=', argument='+argument if argument else ''
     text=fr"""#!name=Cuios • Quay 60s · Nhập 10s/6 MiB • v{version}
 #!desc=Mục tiêu: quay 60s, nhập 10s/6 MiB, mic và 54 ghi chú nền gradient. Chưa xác nhận trên iPhone; chỉ bật một module Locket.
-#!author=Cuongqtx11 / Cuios
+#!author=Cuios.shop
 #!moduleUrl={base}{name}
 
 [Script]
