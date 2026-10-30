@@ -4,7 +4,7 @@ import hashlib,json
 
 root=Path(__file__).resolve().parents[1]
 version=json.loads((root/'package.json').read_text())['version']
-base='https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/'
+base='https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_10s_6mb/main/'
 source=(root/'scripts/locket.js').read_bytes()
 digest=hashlib.sha256(source).hexdigest()
 relative='scripts/releases/locket-v'+version+'-'+digest[:12]+'.js'

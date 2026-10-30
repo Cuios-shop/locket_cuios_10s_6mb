@@ -1,5 +1,9 @@
 # Cuios v4.1.0 · Quay 60s / Nhập 10s, 6 MiB
 
+Repo này lưu riêng bản v4.1.0 từ commit `4b3ebce` theo yêu cầu giữ hai dự án. Runtime JS giữ nguyên từng byte và SHA-256. Module tải runtime từ repo này; các URL artwork trong JS vẫn dùng repo `locket_cuios_stable` được giữ lại.
+
+Bản 60s/100 MiB được người dùng xác nhận hoạt động nằm ở [locket_cuios_stable](https://github.com/Cuongqtx11/locket_cuios_stable).
+
 Bản cập nhật theo yêu cầu mới: **quay 60 giây; video từ thư viện tối đa 10 giây và 6 MiB (6.291.456 bytes)**. Giữ 4 ghi chú thương hiệu và 50 mẫu mới. Các repo lịch sử và runtime v4.0.0 đã phát hành không bị sửa.
 
 **Đây là cấu hình mục tiêu và bản thử tương thích. Chưa xác nhận quay đủ 60s, mic/âm thanh, picker video hoặc ghi chú hoạt động trên iPhone.** Người dùng đã báo v4.0.0 vẫn chỉ quay 3s và không có các chức năng đó. Không coi 44 test offline là bằng chứng đã khắc phục lỗi trên máy.
@@ -9,7 +13,7 @@ Bản cập nhật theo yêu cầu mới: **quay 60 giây; video từ thư việ
 Tắt các module Locket khác trong cấu hình đang dùng. Thêm đúng module mới, chỉ bật một module:
 
 ```text
-https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/locket60s_10s_6mb.sgmodule
+https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_10s_6mb/main/locket60s_10s_6mb.sgmodule
 ```
 
 Bật HTTPS Decryption/MITM và CA đã được tin cậy. Bật kết nối Shadowrocket, vuốt đóng Locket rồi mở lại. Không cần gỡ app hay reset quyền riêng tư. Hai tên module cũ trong repo này cũng dùng cùng runtime v4.1.0, nhưng không cài chồng.

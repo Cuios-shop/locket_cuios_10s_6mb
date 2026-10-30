@@ -178,7 +178,7 @@ const rules = moduleText.split("\n").filter(line => line.includes(" = type=")).m
 test("all module rules load an existing script in this repository", () => {
   assert.equal(rules.length, 5);
   for (const rule of rules) {
-    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/" + release.runtime);
+    assert.equal(rule.url, "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_10s_6mb/main/" + release.runtime);
     assert.ok(fs.existsSync(path.join(root, "scripts/locket.js")));
   }
   assert.ok(!moduleText.includes("cloudfunctions"));
