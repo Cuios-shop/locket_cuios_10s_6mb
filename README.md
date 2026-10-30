@@ -1,90 +1,83 @@
-# Cuios • Profile thống nhất v4.0.0
+# Cuios v4.1.0 · Quay 60s / Nhập 10s, 6 MiB
 
-Repo mới **locket_cuios_stable**, kế thừa mã và 54 mẫu ghi chú từ locket60s_amthanh_mic. Các repo cũ không thay đổi. Tên repo không phải cam kết đã kiểm chứng mọi chức năng trên iPhone; đây là bản sửa luồng cấu hình và có công cụ để kiểm chứng trên thiết bị.
+Bản cập nhật theo yêu cầu mới: **quay 60 giây; video từ thư viện tối đa 10 giây và 6 MiB (6.291.456 bytes)**. Giữ 4 ghi chú thương hiệu và 50 mẫu mới. Các repo lịch sử và runtime v4.0.0 đã phát hành không bị sửa.
 
-**Mục tiêu giữ nguyên:** quay 60s có mic/âm thanh, nhập video có tiếng 60s/100 MiB, 4 ghi chú thương hiệu + 50 mẫu mới, nền riêng và khung Aura trên widget gốc. **Chưa xác nhận các mục tiêu này hoạt động ổn định mỗi lần bật trên máy người dùng.**
+**Đây là cấu hình mục tiêu và bản thử tương thích. Chưa xác nhận quay đủ 60s, mic/âm thanh, picker video hoặc ghi chú hoạt động trên iPhone.** Người dùng đã báo v4.0.0 vẫn chỉ quay 3s và không có các chức năng đó. Không coi 44 test offline là bằng chứng đã khắc phục lỗi trên máy.
 
-## Cài một lần, kiểm tra cùng một profile
+## Cài bản này
 
-Tắt mọi module Locket khác trong cấu hình đang dùng. Không cần xoá Locket, xoá dữ liệu hoặc reset quyền riêng tư.
-
-```text
-https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/locket_cuios_stable.sgmodule
-```
-
-1. Nhập module, giữ HTTPS Decryption/MITM và CA đã tin cậy. Bật kết nối Shadowrocket trước khi mở Locket.
-2. Trong Safari, nhập **đầy đủ `http://`** để mở trang cục bộ sau, khi Shadowrocket đang kết nối:
+Tắt các module Locket khác trong cấu hình đang dùng. Thêm đúng module mới, chỉ bật một module:
 
 ```text
-http://cuios-status.invalid/status
+https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/locket60s_10s_6mb.sgmodule
 ```
 
-3. Trang hiện v4.0.0 chứng minh runtime mới đã được proxy tải và thực thi. Bấm hai nút **Kiểm tra HTTPS** RevenueCat/Firebase; chỉ trang mang chữ **Cuios · HTTPS check v4.0.0** là kết quả hook thành công. Trang 404/Google hoặc lỗi chứng chỉ không phải thành công. Kết quả trình duyệt được ghi riêng, chưa chứng minh Locket đã gửi request cấu hình.
-4. Mở Locket, vào camera/cài đặt/Gold rồi quay lại trang trạng thái, chọn **Tải lại trạng thái**. So sánh thời gian RevenueCat và Firebase.
-5. Nếu Firebase đã sửa response, kiểm tra trong app. App có thể chỉ activate ở lần mở sau. Nếu thời gian request không đổi, đóng/mở liên tục không chứng minh đã fetch mới.
-6. Khi vẫn lỗi, mở **Xem báo cáo chẩn đoán** và gửi nội dung đó để đối chiếu. Báo cáo không lưu token, UID, header hoặc response tài khoản đầy đủ.
+Bật HTTPS Decryption/MITM và CA đã được tin cậy. Bật kết nối Shadowrocket, vuốt đóng Locket rồi mở lại. Không cần gỡ app hay reset quyền riêng tư. Hai tên module cũ trong repo này cũng dùng cùng runtime v4.1.0, nhưng không cài chồng.
 
-`.invalid` là địa chỉ trang mock trong script, không phải website công khai. Module có ánh xạ Host riêng tới IP dành cho proxy để tránh NXDOMAIN trước khi hook HTTP chạy. Trang được trả lời cục bộ bởi hook http-request, không cần DNS/server bên ngoài. Không đổi URL thành https. Host mapping và mock cần được Shadowrocket thực thi; chưa thử trên iPhone ở môi trường này. Nếu trang không mở, báo rõ lỗi trang thay vì tiếp tục xoá/cài app.
+## Thay đổi cụ thể
 
-Bản [giữ khung server](https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/locket_cuios_no_widget.sgmodule) có cùng xử lý video/mic/ghi chú, chỉ không chèn khung Aura. Chỉ chọn một trong hai module.
+- Tách quay 60s khỏi nhập/cắt video 10s và dung lượng nhập 6 MiB. v4.0.0 đã dùng chung 60s/100 MiB cho hai luồng, không đúng yêu cầu hiện tại.
+- Các nhánh upload/trim dùng 10s; recording dùng 60s. Giữ kiểu số/chuỗi số, đơn vị giây/ms, codec, bitrate và các field không rõ nghĩa. Không áp dung lượng thư viện cho giới hạn file quay chung.
+- Bật cờ âm thanh có sẵn trong các nhánh media/audio lồng nhau, tắt mute/strip/remove_audio. Các cờ tương thích cũ vẫn chưa phải API được Locket công bố; script không tự gọi được API xin quyền mic của app.
+- Danh sách `overlay_dynamic_captions` giữ tên renderer của server, không bị thay toàn bộ bằng 54 ID tự đặt. Đây là thử nghiệm tương thích schema, chưa chứng minh là nguyên nhân ghi chú không hiện.
+- 54 ghi chú mới dùng nền gradient mặc định, không phụ thuộc tải ảnh PNG. Giữ khung widget server. Renderer và bố cục vẫn cần kiểm tra trong app. Mã artwork/khung thử nghiệm còn trong repo, không bật ở module này.
+- Trang báo cáo mở được qua đường HTTPS trên host thật, không cần tên miền `.invalid`. Kho chẩn đoán mới tách khỏi v4.0.0; báo cáo thêm tên/kiểu cờ media có trong response gốc để phát hiện đổi schema.
 
-## Đọc trạng thái
+**Lỗi dùng chung giới hạn trong mã chưa chứng minh được nguyên nhân app chỉ quay 3s.** Nếu script không chạy/không có fetch hoặc app không activate, đổi giới hạn cũng chưa đủ. Xem [phân tích v4.1](docs/ANALYSIS-v4.1.md).
 
-| Trạng thái | Ý nghĩa thực tế | Việc cần đối chiếu |
-| --- | --- | --- |
-| Trang trạng thái không mở | Chưa xác nhận hook/runtime hoạt động | Cấu hình đang chọn, tải script, kết nối proxy |
-| Chưa thấy request | Script chưa quan sát được app gọi endpoint | MITM, rule trùng, app cache, routing |
-| Chỉ thấy request, chưa có response mới | Hook request đã chạy | Request có lỗi hoặc response bị rule khác xử lý không |
-| Đã sửa response | Profile mục tiêu đã gửi về app | Native activate, renderer, mic/picker và server upload |
-| Sửa một phần / partial | Có object media không khớp schema | warnings và inputMediaFields trong báo cáo |
-| no_entries | Server không trả cấu hình đầy đủ | Không dựng cấu hình giả hoặc replay dữ liệu tài khoản cũ |
-| http_error / unsupported format | API lỗi hoặc body chưa hỗ trợ | Mã HTTP, endpoint/runtime tương ứng |
-| unhandled_project_or_namespace | Thấy request nhận diện Locket ngoài project/namespace hỗ trợ | Cần xác định route thật trước khi sửa |
+## Kiểm tra mic và request thực tế
 
-Quan sát cũ hơn 5 phút được đánh dấu rõ. Chưa có record khi kho chẩn đoán hỏng không được coi là bằng chứng app không gửi request. Các trạng thái kỹ thuật không tự xác nhận chức năng đã hoạt động trên máy.
+Trong iPhone: **Cài đặt → Quyền riêng tư & Bảo mật → Micrô**. Nếu có Locket nhưng đang tắt, có thể bật lại tại đó. Nếu không có Locket, cần xác định app có đi vào luồng ghi âm hay chưa; không tạo thêm nút mic bằng cấu hình proxy.
 
-## Những thay đổi có căn cứ trong v4
+Theo [Apple](https://developer.apple.com/library/archive/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/RequestingPermission/RequestingPermission.html), app phải xin và nhận quyền trước khi ghi âm. Trình duyệt xin quyền mic chỉ cấp quyền cho trình duyệt, không cấp cho Locket.
 
-- Nhận diện Locket bằng **X-Client-Bundle-ID / X-Ios-Bundle-Identifier**, bên cạnh User-Agent và mã sản phẩm trong response. Header bundle mâu thuẫn sẽ không bị UA ghi đè.
-- Hỗ trợ ba host RevenueCat được SDK/tài liệu chính thức sử dụng; vẫn chỉ sửa receipts/subscriber v1. Các route khác được chẩn đoán và trả nguyên dữ liệu.
-- Bỏ conditional-cache header trên request đã nhận diện; không đổi Authorization, nonce, body upload hoặc dữ liệu video.
-- Firebase trả state UPDATE cho cấu hình hợp lệ đã sửa, và **ETag theo toàn bộ nội dung cấu hình đã sửa**, gồm metadata. Cùng nội dung giữ cùng ETag; nội dung/theme khác có revision khác.
-- Một profile 60s/100 MiB/54 ghi chú dùng một runtime độc lập, URL chứa SHA-256 rút gọn. Tất cả rule trỏ đúng cùng file; release.json lưu hash đầy đủ để kiểm tra.
-- Chẩn đoán cục bộ tách key RevenueCat/Firebase và hai phép kiểm tra HTTPS từ trình duyệt, tránh các script chạy song song ghi đè trạng thái nhau. Không lưu/replay response có thông tin tài khoản.
+Khi Shadowrocket đang bật, mở Safari:
 
-Firebase có fetched config và active config riêng. **Proxy không thể ép app gọi fetch/activate hoặc xin quyền microphone nếu native không làm.** ETag mới sửa được một lớp giao thức khi có fetch; không vượt qua minimumFetchInterval của SDK hoặc giới hạn máy chủ. Xem [phân tích, nguồn và mức độ chắc chắn](docs/ANALYSIS-v4.md).
-
-## Nội dung và giới hạn tính năng
-
-- 60 giây và 104857600 bytes là cấu hình mục tiêu, không chứng minh picker/encoder/server chấp nhận file đó. Không thay codec, bitrate hoặc storage bucket.
-- Giữ các cờ mic/thư viện của nhánh trước, không coi tên cờ cộng đồng là API Locket chính thức. Báo cáo tên/kiểu field media giúp đối chiếu khi app dùng schema khác.
-- 54 ghi chú: bốn mẫu đầu là **mua chứng chỉ Cuios.shop**, **Bản quyền Cuios**, **Cưn🍤**, **tom11th5**; sau đó 50 mẫu trong năm nhóm. Ghi chú đã đăng không bị sửa.
-- 11 nền tự thiết kế và khung Aura dùng PNG từ repo mới. Khung là hiệu ứng hình ảnh tĩnh; không ép WidgetKit reload/animate.
-- Có chữ ký RevenueCat được ghi nhận bằng một boolean. Script không tạo chữ ký hợp lệ thay máy chủ; app có thể từ chối response đã sửa.
-
-![54 mẫu ghi chú](assets/captions-preview.jpg)
-
-## Kiểm thử
-
-Node.js 20 trở lên, không cần dependency:
-
-```bash
-npm run check
-npm test
+```text
+https://firebaseremoteconfig.googleapis.com/cuios-check?view=status
 ```
 
-40 test logic: hồi quy Gold/media/54 ghi chú, nhận diện thiếu UA/bundle mâu thuẫn, host dự phòng, validator ổn định/đổi nội dung/metadata, mô hình fetched-active của SDK, NO_CHANGE, trạng thái cục bộ, lỗi/kho lưu trữ và dữ liệu chẩn đoán không chứa giá trị riêng.
+Chỉ trang mang chữ **Cuios**, **v4.1.0** và đúng mục tiêu quay 60s/nhập 10s/6 MiB là kết quả hook mới. Lỗi chứng chỉ, 404/Google hoặc nội dung v4.0.0 không phải thành công. Trang này được script trả cục bộ; không truy vấn account bên ngoài.
 
-Các test không thay thế kiểm tra mic/picker/upload trên iPhone. Để xác nhận trên máy cần test clip 10/20/60 giây có tiếng trước/sau gửi, file lớn hơn 6 MB, ghi chú và widget, rồi đối chiếu báo cáo cùng thời điểm.
+Mở Locket, vào camera/thư viện rồi quay lại trang và tải lại. Chọn **Xem báo cáo chẩn đoán**, hoặc mở:
 
-## Dựng bản phát hành
+```text
+https://firebaseremoteconfig.googleapis.com/cuios-check?view=report
+```
+
+Gửi nội dung báo cáo nếu vẫn quay 3s/không mic/không ghi chú. Báo cáo không lưu token, UID, header hay body tài khoản. `deviceFeaturesVerified` luôn là `false` vì proxy không quan sát trực tiếp chức năng native.
+
+| Kết quả | Ý nghĩa |
+| --- | --- |
+| Không hiện trang Cuios v4.1.0 | Chưa xác nhận đúng runtime/hook/MITM hoạt động |
+| HTTPS trình duyệt được, không có request Firebase | Chưa quan sát được Locket fetch qua script; cần đối chiếu cấu hình, app cache hoặc đường mạng |
+| `patched` / `partial` | Đã gửi response cấu hình sửa; chưa chứng minh app áp dụng hoặc tính năng chạy |
+| `no_entries` / `http_error` / `unexpected_payload` | Server/response chưa thể patch; xem thời gian và mã HTTP |
+| Request cũ hơn 5 phút | Chưa chứng minh app vừa fetch mới |
+
+Trang HTTP cũ vẫn hỗ trợ tại `http://cuios-status.invalid/status`; ánh xạ Host cần proxy hỗ trợ. Đường HTTPS phía trên tránh phụ thuộc ánh xạ đó. Quan sát từ Safari luôn tách riêng request của app.
+
+## 54 ghi chú
+
+Bốn mẫu đầu: **mua chứng chỉ Cuios.shop**, **Bản quyền Cuios**, **Cưn🍤**, **tom11th5**. Tiếp theo 50 mẫu tình yêu, vui vẻ, cảm xúc, trêu đùa và dịu dàng. Thay danh sách trong picker, không sửa ghi chú của bài đã đăng. PNG có sẵn để thử artwork tùy chọn; profile mặc định chỉ dùng màu gradient.
+
+## Giới hạn kỹ thuật
+
+Proxy chỉ xử lý response mạng phù hợp. Nó không tự ép SDK gọi fetch/activate, không chạy native AVCapture/AVAudioSession trong Locket, không tự cấp quyền iOS hoặc vượt giới hạn máy chủ. App có thể từ chối response RevenueCat có chữ ký sau khi bị sửa. Không giả mạo chữ ký, đổi bucket, đụng body upload hoặc cấu hình hệ thống máy.
+
+Phần bundle identity, host dự phòng, validator Firebase theo nội dung và fail-open khi lỗi từ v4.0 được giữ. [Phân tích v4.0](docs/ANALYSIS-v4.md) và các tài liệu v2/v3 là lịch sử; giới hạn hiện tại là 60s quay / 10s nhập / 6 MiB.
+
+## Dựng và kiểm thử
+
+Node.js 20+, không dependency:
 
 ```bash
 python3 tools/build_script.py
 python3 tools/build_modules.py
+npm run check
 npm test
 ```
 
-build_modules tạo runtime content-addressed trong scripts/releases và module trỏ tới đúng artifact. Không sửa đè artifact đã phát hành. Khi đổi logic hoặc artwork, tăng version, dựng lại và kiểm tra. Artwork dựng bằng tools/build_artwork.py (chỉ bước authoring cần Pillow).
+44 test: chia giới hạn quay/nhập/cắt; giữ đơn vị/kiểu/schema khác; âm thanh lồng nhau; 54 ghi chú và renderer; HTTPS report/redaction; hồi quy nhận diện/ETag/cache/NO_CHANGE; integrity runtime mới và artifact v4.0.0 bất biến. Kiểm tra thực tế còn cần: clip quay vượt 3s rồi 60s, yêu cầu mic và tiếng sau gửi; nhập clip 10s dưới 6 MiB; thấy 54 ghi chú.
 
-Mã kế thừa MIT. Các ghi chép v2/v3 trong docs là lịch sử; tài liệu hiện tại là README và ANALYSIS-v4.md.
+Runtime có tên chứa hash; mọi rule dùng cùng file. `release.json` chứa SHA-256 đầy đủ. Khi đổi logic, tăng version và dựng artifact mới; không sửa file đã phát hành. Mã kế thừa theo MIT.

@@ -1,5 +1,14 @@
 # Thay đổi
 
+## 4.1.0 — quay 60s, nhập 10s/6 MiB
+
+- Tách ngữ cảnh recording/upload/trim và trần byte nhập; giữ kiểu dữ liệu, đơn vị, codec và trường chưa rõ nghĩa.
+- Xử lý audio.enabled trong các nhánh media lồng nhau; chưa xác minh mic native.
+- Giữ renderer server cho ghi chú; 54 mẫu nền gradient mặc định, giữ khung widget gốc.
+- Trang status/report qua HTTPS host thật, tên/kiểu cờ media root và kho chẩn đoán tách version.
+- Module mới locket60s_10s_6mb.sgmodule, runtime hash mới, giữ artifact v4.0.0. 44 test offline; chưa kiểm thử chức năng trên iPhone.
+
+
 ## 4.0.0 — profile thống nhất, chẩn đoán và xử lý revision
 
 - Nhận diện bundle ID, thêm host dự phòng RevenueCat chính thức, chẩn đoán route chưa hỗ trợ.

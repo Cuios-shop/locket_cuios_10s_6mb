@@ -1,8 +1,8 @@
 {
   "name": "locket_cuios_stable",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "private": true,
-  "description": "Locket 60s/100 MB, mic, 54 ghi chú Cuios và khung widget thử nghiệm",
+  "description": "Locket: mục tiêu quay 60s, nhập video 10s/6 MiB, mic và 54 ghi chú; có chẩn đoán",
   "scripts": {
     "check": "node --check scripts/locket.js",
     "test": "node --test"

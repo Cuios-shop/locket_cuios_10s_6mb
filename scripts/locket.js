@@ -4,12 +4,13 @@
   "use strict";
 
   var TAG = "[locket_cuios_stable] ";
-  var VERSION = "4.0.0";
-  var STATE_KEY = "CUIOS_STABLE_V4_DIAGNOSTICS";
+  var VERSION = "4.1.0";
+  var STATE_KEY = "CUIOS_4_1_DIAGNOSTICS";
   var WARNINGS = [];
   var CURRENT_SERVICE = "runtime";
   var VIDEO_SECONDS = 60;
-  var VIDEO_BYTES = 100 * 1024 * 1024;
+  var UPLOAD_SECONDS = 10;
+  var VIDEO_BYTES = 6 * 1024 * 1024;
   var ASSET_BASE = "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/assets/";
   // BEGIN GENERATED CAPTION CATALOGUE
   var CAPTIONS = [{"id":"brand","section":"Cuios • Bản quyền","background":"brand","items":[["certificate","mua chứng chỉ Cuios.shop","👑"],["copyright","Bản quyền Cuios","✨"],["cun","Cưn🍤","🍤"],["tom","tom11th5","💛"]]},{"id":"love","section":"Tình yêu","background":"love","items":[["choose","Tim tớ chọn cậu rồi","💗"],["withyou","Đi đâu cũng muốn có cậu","🫶"],["soft","Gặp cậu là ngày đẹp","🌷"],["little","Thương cậu thêm một chút","💕"],["home","Bên cậu là thấy nhà","🏡"],["hug","Gửi cậu một cái ôm","🤍"],["miss","Nhớ cậu, không cần lý do","💌"],["smile","Cậu cười là tớ thua","🥰"],["wait","Chừa một chỗ cạnh tớ nhé","💞"],["simple","Thích cậu, thế thôi","💘"]]},{"id":"joy","section":"Vui vẻ","background":"joy","items":[["enough","Hôm nay vui vừa đủ","🌞"],["vitamin","Nạp một chút vitamin cười","🍊"],["happy","Đang bận yêu đời","🌈"],["broadcast","Niềm vui đang phát sóng","📻"],["sun","Mang nắng về nhà","☀️"],["luck","May mắn ghé chơi rồi","🍀"],["photo","Chụp vội một ngày xinh","📸"],["weekend","Cuối tuần nằm trong tim","🎈"],["save","Một ngày đáng lưu lại","✨"],["laugh","Cười lên, ảnh đang đẹp","😆"]]},{"id":"mood","section":"Cảm xúc","background":"mood","items":[["rain","Hôm nay lòng hơi mưa","🌧️"],["quiet","Cho tớ yên một chút","🌙"],["thought","Có vài điều chưa nói","💭"],["slow","Đang học cách chậm lại","🍃"],["hug","Một cái ôm là đủ","🫂"],["tired","Hết pin, cần được thương","🪫"],["okay","Không ổn cũng không sao","🤍"],["hope","Ngày mai mình thử lại","🌅"],["memory","Có người nằm trong ký ức","🎞️"],["feeling","Chẳng biết gọi tên cảm xúc","🫧"]]},{"id":"tease","section":"Trêu đùa","background":"tease","items":[["cute","Xinh thế này ai chịu nổi","😎"],["seen","Xem rồi thì nhớ tớ đi","👀"],["crush","Đẹp vậy mà vẫn độc thân","😌"],["heart","Lỡ xem là phải thả tim","😏"],["busy","Bận đáng yêu, lát nhắn","💅"],["snack","Không giận, chỉ thiếu trà sữa","🧋"],["signal","Phát tín hiệu: nhớ bạn","📡"],["sleep","Online đó, nhưng buồn ngủ","😴"],["model","Camera thường, người phi thường","🤳"],["notice","Thông báo: cần được cưng","📣"]]},{"id":"gentle","section":"Dịu dàng","background":"gentle","items":[["breathe","Hít thở rồi mình đi tiếp","🌿"],["coffee","Cà phê ấm, lòng nhẹ hơn","☕"],["small","Gom niềm vui nhỏ mỗi ngày","🪴"],["enough","Mình đã cố gắng đủ rồi","🌼"],["kind","Dịu dàng với mình một chút","🕊️"],["now","Ở đây, ngay lúc này","🍵"],["sky","Ngước lên, trời vẫn xanh","☁️"],["rest","Nghỉ một nhịp cũng được","🛋️"],["bloom","Mỗi người một mùa nở hoa","🌸"],["night","Ngủ ngon, mai mình lại xinh","🌙"]]}];
@@ -88,10 +89,13 @@
       }
     } catch (_) { /* Show that observation storage is unavailable instead of implying no traffic. */ }
     var state = readDiagnostics();
+    var viaHTTPS = HTTPS_CHECK.test(String(request.url || ""));
+    var statusHref = viaHTTPS ? "/cuios-check?view=status" : "/status?reload=1";
+    var reportHref = viaHTTPS ? "/cuios-check?view=report" : "/report.json";
     var report = {
       runtime: VERSION,
       storageAvailable: storageWorking,
-      recipe: { seconds: VIDEO_SECONDS, uploadBytes: VIDEO_BYTES, captions: 54 },
+      recipe: { recordingSeconds: VIDEO_SECONDS, uploadSeconds: UPLOAD_SECONDS, uploadBytes: VIDEO_BYTES, captions: 54 },
       observed: state.services,
       deviceFeaturesVerified: false,
       note: "Đây là request/response script đã quan sát, không phải xác nhận Locket đã activate hoặc mic/video đã hoạt động."
@@ -115,13 +119,13 @@
       }
       body = "<!doctype html><html lang=vi><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Cuios · Trạng thái</title>" +
         "<style>body{font:16px system-ui;background:#101522;color:#edf1ff;max-width:780px;margin:auto;padding:24px}section{background:#1d2639;border:1px solid #46516b;border-radius:16px;padding:18px;margin:16px 0}h1{font-size:27px}h2{font-size:20px}p{line-height:1.6}a{color:#b6c8ff}small{color:#b9c3d9}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}strong{color:#ffd693}</style>" +
-        "<h1>Cuios · Kiểm tra kết nối</h1><p>Script đang chạy: <strong>v" + VERSION + "</strong>. Mục tiêu: 60s · 100 MiB · 54 ghi chú.</p>" +
+        "<h1>Cuios · Kiểm tra kết nối</h1><p>Script đang chạy: <strong>v" + VERSION + "</strong>. Mục tiêu: quay 60s · nhập 10s/6 MiB · 54 ghi chú.</p>" +
         (storageWorking ? "" : "<section><strong>Kho chẩn đoán không ghi/đọc được. Thiếu trạng thái ở đây chưa chứng minh app không có request; cần xem log script.</strong></section>") +
         card("RevenueCat", "revenuecat") + card("Firebase Remote Config", "firebase") +
-        "<section><h2>Kiểm tra HTTPS từ Safari</h2><p><a href='https://api.revenuecat.com/cuios-check'>Kiểm tra RevenueCat</a> · <a href='https://firebaseremoteconfig.googleapis.com/cuios-check'>Kiểm tra Firebase</a></p><p>Chỉ trang có chữ Cuios và v4.0.0 là response kiểm tra từ script. Trang lỗi Google/404 không phải kết quả thành công.</p></section>" +
+        "<section><h2>Kiểm tra HTTPS từ Safari</h2><p><a href='https://api.revenuecat.com/cuios-check'>Kiểm tra RevenueCat</a> · <a href='https://firebaseremoteconfig.googleapis.com/cuios-check'>Kiểm tra Firebase</a></p><p>Chỉ trang có chữ Cuios và v" + VERSION + " là response kiểm tra từ script. Trang lỗi Google/404 không phải kết quả thành công.</p></section>" +
         card("HTTPS RevenueCat qua trình duyệt", "https_revenuecat") + card("HTTPS Firebase qua trình duyệt", "https_firebase") +
         "<section><h2>Đọc kết quả</h2><p>Nếu chưa có request Firebase, đổi module chưa đủ để Locket tải cấu hình mới. Nếu response đã được sửa mà app vẫn cũ, cần kiểm tra activate/schema phía app. Trang này không tự xoá cache Locket hoặc cấp quyền mic.</p><p>Chỉ bật một module Locket. Bật proxy trước, mở Locket, rồi mở lại trang này.</p></section>" +
-        "<p><a href='/status?reload=1'>Tải lại trạng thái</a> · <a href='/report.json'>Xem báo cáo chẩn đoán</a></p><details><summary>Chi tiết có thể gửi để kiểm tra</summary><pre>" + escapeHTML(JSON.stringify(report, null, 2)) + "</pre></details></html>";
+        "<p><a href='" + statusHref + "'>Tải lại trạng thái</a> · <a href='" + reportHref + "'>Xem báo cáo chẩn đoán</a></p><details><summary>Chi tiết có thể gửi để kiểm tra</summary><pre>" + escapeHTML(JSON.stringify(report, null, 2)) + "</pre></details></html>";
       headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'";
       headers["X-Content-Type-Options"] = "nosniff";
     }
@@ -326,6 +330,7 @@
         fields(object[key], path + "." + key, depth + 1);
       });
     }
+    fields(entries, "entries", 0);
     ["camera", "camera_roll", "video_config"].forEach(function (key) {
       var value;
       try { value = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key]; } catch (_) { value = null; }
@@ -334,85 +339,95 @@
     event("firebase", { inputSchema: schema, inputFlags: flags, inputLibraryLimits: report, inputMediaFields: mediaFields });
   }
 
-  function patchMedia(entries, key, defaults) {
-    if (defaults) mergeEntry(entries, key, defaults);
-    if (entries[key] === undefined) return;
+  function patchMedia(entries, key, defaults, library) {
+    if (entries[key] === undefined && !defaults) return;
     var config;
     try {
-      config = typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key];
-    } catch (_) { if (WARNINGS.indexOf(key) < 0) WARNINGS.push(key); return; }
-    if (!record(config)) { if (WARNINGS.indexOf(key) < 0) WARNINGS.push(key); return; }
-
-    // Compatibility defaults; these do not add native capture/picker implementations.
+      config = entries[key] === undefined ? {} :
+        typeof entries[key] === "string" ? JSON.parse(entries[key]) : entries[key];
+    } catch (_) { WARNINGS.push(key); return; }
+    if (!record(config)) { WARNINGS.push(key); return; }
+    // Defaults fill missing keys only, so existing numeric strings keep their type.
+    Object.keys(defaults || {}).forEach(function (name) {
+      if (config[name] === undefined) config[name] = defaults[name];
+    });
     var switches = key === "camera" ? ["microphone_enabled", "sound_enabled"]
       : key === "camera_roll" ? ["enabled", "video_enabled", "video_upload_enabled", "preserve_audio"] : [];
     switches.forEach(function (name) {
       if (config[name] === undefined) config[name] = true;
     });
-
-    // Only known media entries; never rewrite arbitrary numbers or Android schemas.
-    ["gold_max_duration", "goldMaxDuration", "max_duration", "maxDuration",
-      "video_max_duration", "videoMaxDuration", "video_duration", "videoDuration",
-      "trim_max_duration", "trimMaxDuration", "camera_roll_max_duration",
-      "camera_roll_video_max_duration", "recording_duration", "recording_max_duration",
-      "longer_videos_duration", "longer_video_duration", "maximum_duration", "maximumDuration", "max_length"].forEach(function (name) {
-      if (Object.prototype.hasOwnProperty.call(config, name)) config[name] = VIDEO_SECONDS;
-    });
-    // Milliseconds are changed only for explicitly named fields already in the response.
-    ["max_duration_ms", "video_max_duration_ms", "gold_max_duration_ms",
-      "recording_duration_ms", "trim_max_duration_ms"].forEach(function (name) {
-      if (Object.prototype.hasOwnProperty.call(config, name)) config[name] = VIDEO_SECONDS * 1000;
-    });
+    function setFlag(object, name, enabled) {
+      if (typeof object[name] === "boolean") object[name] = enabled;
+      else if (object[name] === "true" || object[name] === "false") object[name] = String(enabled);
+    }
     function audioFlags(object) {
       ["audio_enabled", "sound_enabled", "microphone_enabled", "include_audio", "preserve_audio",
         "muted", "mute", "strip_audio", "remove_audio"].forEach(function (name) {
-        if (!Object.prototype.hasOwnProperty.call(object, name)) return;
-        var enabled = !/^(?:muted|mute|strip_audio|remove_audio)$/.test(name);
-        if (typeof object[name] === "boolean") object[name] = enabled;
-        else if (object[name] === "true" || object[name] === "false") object[name] = String(enabled);
+        setFlag(object, name, !/^(?:muted|mute|strip_audio|remove_audio)$/.test(name));
       });
+      if (record(object.audio)) {
+        setFlag(object.audio, "enabled", true);
+        ["audio_enabled", "sound_enabled", "microphone_enabled", "include_audio", "preserve_audio",
+          "muted", "mute", "strip_audio", "remove_audio"].forEach(function (name) {
+          setFlag(object.audio, name, !/^(?:muted|mute|strip_audio|remove_audio)$/.test(name));
+        });
+      }
     }
-    ["enabled", "video_enabled", "video_upload_enabled", "camera_roll_enabled", "recording_enabled"].forEach(function (name) {
-      if (typeof config[name] === "boolean") config[name] = true;
-      else if (config[name] === "true" || config[name] === "false") config[name] = "true";
-    });
-    audioFlags(config);
-    if (record(config.audio)) {
-      audioFlags(config.audio);
-      if (typeof config.audio.enabled === "boolean") config.audio.enabled = true;
-      else if (config.audio.enabled === "true" || config.audio.enabled === "false") config.audio.enabled = "true";
+    function number(object, name, value) {
+      if (typeof object[name] === "number" && isFinite(object[name])) object[name] = value;
+      else if (typeof object[name] === "string" && /^\d+(?:\.\d+)?$/.test(object[name])) object[name] = String(value);
     }
-    function limits(object, depth) {
-      ["gold_max_duration", "goldMaxDuration", "max_duration", "maxDuration", "video_max_duration", "videoMaxDuration",
-        "maximum_duration", "maximumDuration", "trim_max_duration", "trimMaxDuration", "recording_duration",
-        "max_length", "video_duration", "video_upload_max_duration", "camera_roll_max_duration", "camera_roll_video_max_duration"].forEach(function (name) {
-        if (Object.prototype.hasOwnProperty.call(object, name)) object[name] = VIDEO_SECONDS;
+    function duration(name, isLibrary) {
+      if (/recording|recorded|record_/i.test(name)) return VIDEO_SECONDS;
+      return /upload|camera_roll|trim/i.test(name) || isLibrary ? UPLOAD_SECONDS : VIDEO_SECONDS;
+    }
+    function limits(object, depth, isLibrary) {
+      ["gold_max_duration", "goldMaxDuration", "max_duration", "maxDuration",
+        "video_max_duration", "videoMaxDuration", "video_duration", "videoDuration",
+        "trim_max_duration", "trimMaxDuration", "camera_roll_max_duration",
+        "camera_roll_video_max_duration", "recording_duration", "recording_max_duration",
+        "longer_videos_duration", "longer_video_duration", "maximum_duration", "maximumDuration",
+        "max_length", "video_upload_max_duration"].forEach(function (name) {
+        number(object, name, duration(name, isLibrary));
       });
-      ["max_duration_ms", "video_max_duration_ms", "gold_max_duration_ms", "recording_duration_ms", "trim_max_duration_ms"].forEach(function (name) {
-        if (Object.prototype.hasOwnProperty.call(object, name)) object[name] = VIDEO_SECONDS * 1000;
+      ["max_duration_ms", "video_max_duration_ms", "gold_max_duration_ms",
+        "recording_duration_ms", "trim_max_duration_ms"].forEach(function (name) {
+        number(object, name, duration(name, isLibrary) * 1000);
       });
-      ["max_file_size", "max_upload_bytes", "max_size_bytes", "max_file_size_bytes", "video_max_size_bytes", "max_video_size_bytes"].forEach(function (name) {
-        if (Object.prototype.hasOwnProperty.call(object, name)) {
-          object[name] = typeof object[name] === "string" ? String(VIDEO_BYTES) : VIDEO_BYTES;
-        }
+      ["max_file_size", "max_upload_bytes", "max_size_bytes", "max_file_size_bytes",
+        "video_max_size_bytes", "max_video_size_bytes"].forEach(function (name) {
+        // A shared recording byte cap is not an upload limit. Leave it alone.
+        if (isLibrary || /upload/.test(name)) number(object, name, VIDEO_BYTES);
       });
       ["max_file_size_mb", "max_size_mb", "max_upload_mb"].forEach(function (name) {
-        if (Object.prototype.hasOwnProperty.call(object, name)) object[name] = typeof object[name] === "string" ? "100" : 100;
+        if (isLibrary || /upload/.test(name)) number(object, name, 6);
+      });
+      ["enabled", "video_enabled", "video_upload_enabled", "camera_roll_enabled", "recording_enabled"].forEach(function (name) {
+        setFlag(object, name, true);
       });
       audioFlags(object);
-      if (record(object.audio)) audioFlags(object.audio);
       if (depth >= 4) return;
       ["video", "upload", "recording", "trim", "limits", "free", "gold", "default"].forEach(function (name) {
-        if (record(object[name])) limits(object[name], depth + 1);
+        if (!record(object[name])) return;
+        var childLibrary = name === "recording" ? false : /^(?:upload|trim)$/.test(name) ? true : isLibrary;
+        limits(object[name], depth + 1, childLibrary);
       });
     }
-    limits(config, 0);
+    limits(config, 0, Boolean(library));
     entries[key] = JSON.stringify(config);
   }
 
   function captionPatch(entries) {
     // Replace the old picker catalogue as requested; never edit posted moments.
-    var types = [];
+    // Dynamic renderer names and custom static overlay IDs serve different purposes.
+    // Keep the server renderer list instead of replacing it with our 54 custom IDs.
+    var types;
+    try { types = JSON.parse(entries.overlay_dynamic_captions || "null"); } catch (_) { types = null; }
+    if (!Array.isArray(types) || !types.every(function (value) { return typeof value === "string"; })) {
+      types = ["standard", "music", "location", "weather", "time", "streak", "custom"];
+    }
+    types = types.filter(function (type) { return !/^cuios_/.test(type); });
+    if (types.indexOf("standard") < 0) types.unshift("standard");
     var count = 0;
     var colors = {
       brand: ["#3F2B13", "#77541F"], love: ["#59223F", "#342044"],
@@ -425,19 +440,20 @@
         items: group.items.map(function (template, index) {
           var type = "cuios_" + group.id + "_" + template[0];
           var background = group.background === "brand" ? "brand" : group.background + "_" + (index % 2 + 1);
-          types.push(type);
           count++;
+          var backdrop = { colors: colors[group.background] };
+          // The default compatibility profile has no remote image dependency.
+          if (typeof $argument === "string" && /^(?:aura|gold|rose)-frame$/.test($argument)) {
+            backdrop.image = { type: "image", source: "url", data: ASSET_BASE + "captions/" + background + ".png?v=" + VERSION };
+          }
           return {
             overlay_id: "caption:" + type,
             source: "remote",
             caption: {
               type: "static_content", text: template[1],
-              localized_text: { vi: template[1], en: template[1] },
+              localized_text: { vi: template[1], vn: template[1], en: template[1] },
               icon: { type: "emoji", data: template[2] },
-              background: {
-                colors: colors[group.background],
-                image: { type: "image", source: "url", data: ASSET_BASE + "captions/" + background + ".png?v=" + VERSION }
-              },
+              background: backdrop,
               text_color: "#FFFFFF", max_lines: 1
             }
           };
@@ -495,24 +511,24 @@
       videoMaxDuration: VIDEO_SECONDS
     });
     patchMedia(entries, "camera_roll", {
-      gold_max_duration: VIDEO_SECONDS,
-      goldMaxDuration: VIDEO_SECONDS,
-      video_max_duration: VIDEO_SECONDS,
-      videoMaxDuration: VIDEO_SECONDS,
-      max_duration: VIDEO_SECONDS,
-      maxDuration: VIDEO_SECONDS,
-      trim_max_duration: VIDEO_SECONDS,
-      trimMaxDuration: VIDEO_SECONDS,
-      camera_roll_max_duration: VIDEO_SECONDS,
-      camera_roll_video_max_duration: VIDEO_SECONDS,
+      gold_max_duration: UPLOAD_SECONDS,
+      goldMaxDuration: UPLOAD_SECONDS,
+      video_max_duration: UPLOAD_SECONDS,
+      videoMaxDuration: UPLOAD_SECONDS,
+      max_duration: UPLOAD_SECONDS,
+      maxDuration: UPLOAD_SECONDS,
+      trim_max_duration: UPLOAD_SECONDS,
+      trimMaxDuration: UPLOAD_SECONDS,
+      camera_roll_max_duration: UPLOAD_SECONDS,
+      camera_roll_video_max_duration: UPLOAD_SECONDS,
       max_file_size: VIDEO_BYTES,
       max_upload_bytes: VIDEO_BYTES,
       max_size_bytes: VIDEO_BYTES
-    });
+    }, true);
     // Do not invent a video_config schema when the server does not provide one.
     patchMedia(entries, "video_config");
     ["camera_roll_video_config", "camera_roll_video_upload_config", "video_upload_config"].forEach(function (key) {
-      patchMedia(entries, key);
+      patchMedia(entries, key, null, true);
     });
     Object.assign(entries, {
       camera_roll_preview_enabled: "true",
@@ -520,13 +536,12 @@
       camera_roll_video_enabled: "true",
       camera_roll_video_upload_enabled: "true",
       internal_camera_roll_video_upload_enabled: "true",
-      longer_camera_roll_videos_enabled: "true",
       longer_video_enabled: "true",
       longer_videos_enabled: "true",
       video_sound_enabled: "true",
       microphone_enabled: "true",
       camera_microphone_enabled: "true",
-      // Community-observed compatibility switch, not a verified Locket API contract.
+      // Legacy compatibility switch; its effect is not verified for the installed Locket build.
       mh_mic_enabled_v16: "true",
       custom_widget_frames_enabled: "true",
       captions_enabled: "true",
@@ -537,12 +552,14 @@
       profile_badge_visible: "true"
     });
     ["camera_roll_video_max_duration", "camera_roll_max_duration", "camera_roll_duration",
-      "max_video_duration", "video_max_duration", "video_trim_max_duration", "trim_max_duration",
-      "gold_max_duration", "goldMaxDuration", "longer_video_duration", "longer_videos_duration",
-      "longer_video_max_duration", "longer_videos_max_duration", "video_duration",
-      "video_record_max_duration", "video_record_duration", "max_recorded_duration",
-      "recording_max_duration", "recording_duration", "max_video_record_duration",
-      "max_video_duration_seconds", "video_upload_max_duration", "gold_max_video_length_seconds",
+      "video_trim_max_duration", "trim_max_duration", "video_upload_max_duration"].forEach(function (key) {
+      entries[key] = UPLOAD_SECONDS.toFixed(1);
+    });
+    ["max_video_duration", "video_max_duration", "gold_max_duration", "goldMaxDuration",
+      "longer_video_duration", "longer_videos_duration", "longer_video_max_duration",
+      "longer_videos_max_duration", "video_duration", "video_record_max_duration",
+      "video_record_duration", "max_recorded_duration", "recording_max_duration", "recording_duration",
+      "max_video_record_duration", "max_video_duration_seconds", "gold_max_video_length_seconds",
       "gold_video_length_limit", "longerVideoDuration", "video_maximum_duration",
       "camera_video_maximum_duration", "video_recording_maximum_duration"].forEach(function (key) {
       entries[key] = VIDEO_SECONDS.toFixed(1);
@@ -551,19 +568,20 @@
       "can_upload_video", "longerVideosEnabled"].forEach(function (key) {
       if (entries[key] !== undefined && /^(?:true|false)$/.test(String(entries[key]))) entries[key] = "true";
     });
-    ["max_file_size", "max_upload_bytes", "max_size_bytes", "video_max_size_bytes", "camera_roll_video_max_size_bytes"].forEach(function (key) {
+    ["camera_roll_video_max_size_bytes", "camera_roll_max_size_bytes", "video_upload_max_size_bytes"].forEach(function (key) {
       entries[key] = String(VIDEO_BYTES);
     });
-    ["video_upload_max_size_mb", "camera_roll_max_size_mb", "max_file_size_mb"].forEach(function (key) {
-      if (entries[key] !== undefined) entries[key] = "100";
+    if (entries.max_upload_bytes !== undefined) entries.max_upload_bytes = String(VIDEO_BYTES);
+    ["video_upload_max_size_mb", "camera_roll_max_size_mb"].forEach(function (key) {
+      entries[key] = "6";
     });
     mergeEntry(entries, "overlays_v2_config", { suggestions_enabled: true });
     var added = captionPatch(entries);
     var widget = widgetPatch(entries);
     payload.state = "UPDATE";
-    log("firebase: v" + VERSION + " config target=" + VIDEO_SECONDS + "s; upload-bytes=" + VIDEO_BYTES + "; captions=" + added + "; widget=" + widget);
+    log("firebase: v" + VERSION + " config target=" + VIDEO_SECONDS + "s; upload-seconds=" + UPLOAD_SECONDS + "; upload-bytes=" + VIDEO_BYTES + "; captions=" + added + "; widget=" + widget);
     event("firebase", { action: WARNINGS.length ? "partial" : "patched", responseAt: Date.now(), warnings: WARNINGS,
-      sentRecipe: VERSION, sentSeconds: VIDEO_SECONDS, sentUploadBytes: VIDEO_BYTES, sentCaptions: added, widget: widget });
+      sentRecipe: VERSION, sentRecordingSeconds: VIDEO_SECONDS, sentUploadSeconds: UPLOAD_SECONDS, sentUploadBytes: VIDEO_BYTES, sentCaptions: added, widget: widget });
     return true;
   }
 
@@ -610,6 +628,8 @@
     if (check && typeof $response === "undefined") {
       var service = check[1].toLowerCase() === "api.revenuecat.com" ? "https_revenuecat" : "https_firebase";
       event(service, { action: "https_hook_seen" });
+      if (/[?&]view=report(?:&|$)/.test(url)) return statusPage($request, true);
+      if (/[?&]view=status(?:&|$)/.test(url)) return statusPage($request, false);
       return { response: { status: 200, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'" },
         body: "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><h1>Cuios · HTTPS check v" + VERSION + "</h1><p>Script đã nhận request HTTPS kiểm tra từ trình duyệt qua host này. Đây chưa phải bằng chứng Locket gửi request hoặc tính năng native hoạt động.</p><p><a href='http://cuios-status.invalid/status'>Quay lại trang trạng thái</a></p>" } };
     }

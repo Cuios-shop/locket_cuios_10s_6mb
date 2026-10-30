@@ -185,7 +185,7 @@ test("all module rules load an existing script in this repository", () => {
   assert.ok(!moduleText.includes("duyvinh09"));
 });
 
-test("60-second settings cover recording, library selection and trimming consistently", () => {
+test("recording stays at 60 seconds while library selection and trimming use 10 seconds", () => {
   const result = run({ url: firebase, payload: { entries: {
     camera: JSON.stringify({ video_duration: 15, recording_duration: 15 }),
     camera_roll: JSON.stringify({ trim_max_duration: 15, camera_roll_video_max_duration: 15, maximum_duration: 15, maximumDuration: 15, enabled: false }),
@@ -196,13 +196,13 @@ test("60-second settings cover recording, library selection and trimming consist
   for (const key of ["camera", "camera_roll"]) {
     const config = JSON.parse(entries[key]);
     for (const [field, value] of Object.entries(config)) {
-      if (/duration|Duration/.test(field)) assert.equal(value, 60, key + "." + field);
+      if (/duration|Duration/.test(field)) assert.equal(value, key === "camera" ? 60 : 10, key + "." + field);
     }
   }
   for (const [key, value] of Object.entries(entries)) {
-    if (/duration/i.test(key)) assert.equal(value, "60.0", key);
+    if (/duration/i.test(key)) assert.equal(value, /camera_roll|trim|upload/i.test(key) ? "10.0" : "60.0", key);
   }
-  for (const key of ["camera_roll_preview_enabled", "camera_roll_video_enabled", "camera_roll_video_upload_enabled", "internal_camera_roll_video_upload_enabled", "longer_camera_roll_videos_enabled"]) {
+  for (const key of ["camera_roll_preview_enabled", "camera_roll_video_enabled", "camera_roll_video_upload_enabled", "internal_camera_roll_video_upload_enabled"]) {
     assert.equal(entries[key], "true", key);
   }
   const gates = JSON.parse(entries.feature_gates);
@@ -224,7 +224,7 @@ test("existing video schema keeps codecs, units and unknown fields", () => {
   assert.equal(config.recording_duration, 60);
   assert.equal(config.max_duration_ms, 60000);
   assert.equal(config.video_codec, "h264");
-  assert.equal(config.max_upload_bytes, 104857600);
+  assert.equal(config.max_upload_bytes, 6291456);
   assert.equal(config.fps, 15);
   assert.deepEqual(config.unknown, { duration: 15 });
   assert.equal(entries.android_camera_video_recording, original.android_camera_video_recording);
@@ -252,7 +252,7 @@ test("sound and mic flags are enabled, while existing mute/strip flags are disab
   assert.equal(JSON.parse(entries.video_config).mute, false);
 });
 
-test("54 replacement captions have exact branded ordering, unique IDs and matching registration", () => {
+test("54 replacement captions have branded ordering and leave native renderer names available", () => {
   const result = run({ url: firebase, payload: { entries: {
     overlay_items: '[{"section":"old","items":[{"overlay_id":"caption:cuong_hello"}]}]',
     overlay_dynamic_captions: '["old","music"]',
@@ -267,7 +267,8 @@ test("54 replacement captions have exact branded ordering, unique IDs and matchi
   assert.equal(new Set(items.map(item => item.overlay_id)).size, 54);
   assert.ok(items.every(item => !item.overlay_id.startsWith("caption:cuong_")));
   const types = JSON.parse(result.body.entries.overlay_dynamic_captions);
-  assert.deepEqual(types, items.map(item => item.overlay_id.slice("caption:".length)));
+  assert.deepEqual(types, ["standard", "old", "music"]);
+  assert.ok(types.every(type => !type.startsWith("cuios_")));
   assert.deepEqual(JSON.parse(result.body.entries.overlays_v2_config).unknown, { keep: true });
   assert.deepEqual(run({ url: firebase, payload: result.body }).body, result.body);
 });
@@ -283,7 +284,7 @@ test("diagnostics expose only fixed schema/flag classifications, never response 
   };
   const result = run({ url: firebase, payload: { entries } });
   const logs = result.logs.join("\n");
-  assert.ok(logs.includes("diag v4.0.0 input schema camera=object camera_roll=object"));
+  assert.ok(logs.includes("diag v4.1.0 input schema camera=object camera_roll=object"));
   assert.ok(logs.includes("overlay_items=array(1)"));
   assert.ok(logs.includes("video_sound_enabled=off microphone_enabled=on"));
   assert.ok(logs.includes("mh_mic_enabled_v16=other"));
@@ -311,7 +312,7 @@ test("widget event is opt in, preserves unknown metadata and keeps asset in this
   const patched = JSON.parse(result.body.entries.widget_frame_event);
   assert.equal(patched.uid, "cuios_gold_frame_v3");
   assert.deepEqual(patched.extra, { keep: true });
-  assert.equal(patched.url, "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/assets/widget-gold.png?v=4.0.0");
+  assert.equal(patched.url, "https://raw.githubusercontent.com/Cuongqtx11/locket_cuios_stable/main/assets/widget-gold.png?v=4.1.0");
   assert.equal(result.body.entries.video_max_duration, "60.0");
   assert.ok(result.logs.some(line => line.includes("widget=gold-event-experimental")));
   const asset = fs.readFileSync(path.join(root, "assets/widget-gold.png"));
@@ -328,7 +329,7 @@ test("explicit catalogue replacement also repairs malformed old caption lists", 
   for (const bad of ["{broken", "{}", "null"]) {
     const entries = run({ url: firebase, payload: { entries: { overlay_items: bad, overlay_dynamic_captions: bad } } }).body.entries;
     assert.equal(JSON.parse(entries.overlay_items).flatMap(group => group.items).length, 54);
-    assert.equal(JSON.parse(entries.overlay_dynamic_captions).length, 54);
+    assert.ok(JSON.parse(entries.overlay_dynamic_captions).includes("standard"));
     assert.equal(entries.video_max_duration, "60.0");
   }
 });
@@ -395,7 +396,7 @@ test("Firebase recognizes only Locket project IDs for mutation and observes othe
 test("Firebase ETag follows patched content, stays stable across repeat fetches and differs by theme", () => {
   const first = run({ url: firebase, payload: { state: "UPDATE", entries: { camera: '{"max_duration":5}' } }, responseHeaders: { etag: '"server-static"' } });
   const second = run({ url: firebase, payload: first.body, responseHeaders: { ETag: '"server-static"' } });
-  assert.match(first.output.headers.etag, /^"cuios-4\.0\.0-/);
+  assert.match(first.output.headers.etag, /^"cuios-4\.1\.0-/);
   assert.notEqual(first.output.headers.etag, '"server-static"');
   assert.equal(first.output.headers.etag, second.output.headers.etag);
   const gold = run({ url: firebase, payload: first.body, argument: "gold-frame" });
@@ -440,10 +441,10 @@ test("NO_CHANGE without complete entries is reported, never fabricated from old 
 test("local status proves runtime execution but never claims native features or activation were verified", () => {
   const store = memoryStore();
   const before = report(store);
-  assert.equal(before.runtime, "4.0.0");
+  assert.equal(before.runtime, "4.1.0");
   assert.deepEqual(before.observed, {});
   assert.equal(before.deviceFeaturesVerified, false);
-  assert.equal(before.recipe.seconds, 60);
+  assert.deepEqual(before.recipe, { recordingSeconds: 60, uploadSeconds: 10, uploadBytes: 6291456, captions: 54 });
   const html = run({ url: "http://cuios-status.invalid/status", requestOnly: true, store }).output.response;
   assert.equal(html.status, 200);
   assert.ok(html.body.includes("Chưa quan sát thấy request"));
@@ -465,8 +466,8 @@ test("diagnostic service records survive interleaved requests and redact private
   assert.equal(state.observed.firebase.sentETag, run({ url: firebase, payload: { state: "UPDATE", entries: { private: "secret-config-value", camera: '{"private":"secret-inner-value"}' } } }).output.headers.etag);
   const serialized = JSON.stringify([...store.values]);
   for (const value of ["secret-auth-fixture", "secret-config-value", "secret-inner-value", "secret-account-id"]) assert.ok(!serialized.includes(value));
-  assert.ok(store.values.has("CUIOS_STABLE_V4_DIAGNOSTICS_firebase"));
-  assert.ok(store.values.has("CUIOS_STABLE_V4_DIAGNOSTICS_revenuecat"));
+  assert.ok(store.values.has("CUIOS_4_1_DIAGNOSTICS_firebase"));
+  assert.ok(store.values.has("CUIOS_4_1_DIAGNOSTICS_revenuecat"));
 });
 
 test("HTTP errors and unsupported format have distinct status; unknown schemas remain partial", () => {
@@ -485,7 +486,7 @@ test("missing, throwing or corrupt persistent storage cannot break app requests"
   assert.ok(run({ url: firebase, payload: { state: "UPDATE", entries: {} }, store: throwing }).body);
   assert.equal(report(throwing).storageAvailable, false);
   const store = memoryStore();
-  store.values.set("CUIOS_STABLE_V4_DIAGNOSTICS_firebase", '{"schema":1,"data":{"at":"broken"}}');
+  store.values.set("CUIOS_4_1_DIAGNOSTICS_firebase", '{"schema":1,"data":{"at":"broken"}}');
   assert.equal(run({ url: "http://cuios-status.invalid/status", requestOnly: true, store }).output.response.status, 200);
   assert.ok(run({ url: firebase, payload: { state: "UPDATE", entries: {} } }).body);
 });
@@ -509,7 +510,7 @@ test("the complete profile references a single content-addressed runtime and no 
   assert.equal(crypto.createHash("sha256").update(published).digest("hex"), release.sha256);
   assert.equal(release.version, require("../package.json").version);
   assert.ok(source.includes('var VERSION = "' + release.version + '";'));
-  for (const name of ["locket_cuios_stable.sgmodule", "locket_cuios_no_widget.sgmodule"]) {
+  for (const name of ["locket60s_10s_6mb.sgmodule", "locket_cuios_stable.sgmodule", "locket_cuios_no_widget.sgmodule"]) {
     const text = fs.readFileSync(path.join(root, name), "utf8");
     const paths = [...text.matchAll(/script-path=([^,\n]+)/g)].map(match => match[1]);
     assert.equal(paths.length, 5);
@@ -528,7 +529,7 @@ test("HTTPS self-check is local and records browser transport separately from ac
     assert.equal(rules.filter(rule => rule.type === "http-request" && rule.pattern.test(url)).length, 1);
     const result = run({ url, requestOnly: true, store });
     assert.equal(result.output.response.status, 200);
-    assert.ok(result.output.response.body.includes("Cuios · HTTPS check v4.0.0"));
+    assert.ok(result.output.response.body.includes("Cuios · HTTPS check v4.1.0"));
   }
   const state = report(store).observed;
   assert.equal(state.https_firebase.action, "https_hook_seen");
@@ -537,7 +538,7 @@ test("HTTPS self-check is local and records browser transport separately from ac
   assert.equal(state.revenuecat, undefined);
 });
 
-test("a library config capped at 10s and 6 MiB becomes 60s and 100 MiB across media profiles", () => {
+test("library configuration stays at 10s and 6 MiB while keeping unrelated image and storage settings", () => {
   const input = { entries: {
     camera_roll: JSON.stringify({
       max_duration: 10, max_file_size: 6291456, fps: 30,
@@ -553,29 +554,29 @@ test("a library config capped at 10s and 6 MiB becomes 60s and 100 MiB across me
   const result = run({ url: firebase, payload: input });
   const entries = result.body.entries;
   const roll = JSON.parse(entries.camera_roll);
-  assert.equal(roll.max_duration, 60);
-  assert.equal(roll.max_file_size, 104857600);
-  assert.equal(roll.gold.max_duration, 60);
-  assert.equal(roll.gold.max_size_bytes, "104857600");
-  assert.equal(roll.gold.max_size_mb, 100);
+  assert.equal(roll.max_duration, 10);
+  assert.equal(roll.max_file_size, 6291456);
+  assert.equal(roll.gold.max_duration, 10);
+  assert.equal(roll.gold.max_size_bytes, "6291456");
+  assert.equal(roll.gold.max_size_mb, 6);
   assert.equal(roll.gold.audio.remove_audio, false);
-  assert.equal(roll.free.max_duration_ms, 60000);
-  assert.equal(roll.free.max_upload_bytes, 104857600);
-  assert.equal(roll.upload.limits.maximum_duration, 60);
-  assert.equal(roll.upload.limits.max_file_size_bytes, 104857600);
+  assert.equal(roll.free.max_duration_ms, 10000);
+  assert.equal(roll.free.max_upload_bytes, 6291456);
+  assert.equal(roll.upload.limits.maximum_duration, 10);
+  assert.equal(roll.upload.limits.max_file_size_bytes, 6291456);
   assert.deepEqual(roll.custom, { max_duration: 10, max_file_size: 6291456 });
   assert.equal(roll.fps, 30);
-  assert.equal(entries.max_file_size, "104857600");
-  assert.equal(entries.max_file_size_mb, "100");
+  assert.equal(entries.max_file_size, "6291456");
+  assert.equal(entries.max_file_size_mb, "6");
   assert.equal(entries.image_cache_max_size, "6291456");
   assert.equal(entries.storage_bucket_video, "gs://keep-video");
-  assert.deepEqual(JSON.parse(entries.video_upload_config), { max_duration: 60, max_upload_bytes: 104857600, codec: "h264" });
+  assert.deepEqual(JSON.parse(entries.video_upload_config), { max_duration: 10, max_upload_bytes: 6291456, codec: "h264" });
   assert.ok(result.logs.some(line => line.includes('"max_file_size":6291456')));
-  assert.ok(result.logs.some(line => line.includes("upload-bytes=104857600; captions=54")));
+  assert.ok(result.logs.some(line => line.includes("upload-bytes=6291456; captions=54")));
 });
 
 test("all caption backgrounds resolve to local PNG assets and include fallback colors", () => {
-  const entries = run({ url: firebase, payload: { entries: {} } }).body.entries;
+  const entries = run({ url: firebase, payload: { entries: {} }, argument: "aura-frame" }).body.entries;
   const items = JSON.parse(entries.overlay_items).flatMap(group => group.items);
   const uniqueAssets = new Set();
   for (const item of items) {
@@ -599,4 +600,81 @@ test("posted moments and profile APIs are never rewritten by the new catalogue o
   for (const url of ["https://api.locketcamera.com/getLatestMomentV2", "https://firebasestorage.googleapis.com/v0/b/locket-video/o", "https://api.locketcamera.com/postMomentV2"]) {
     assert.deepEqual(run({ url, payload }).output, {});
   }
+});
+
+test("mixed capture/upload schemas do not let library limits shorten recording or limit its byte budget", () => {
+  const entries = run({ url: firebase, payload: { entries: {
+    camera: JSON.stringify({ max_duration: "3", max_file_size: 50000000,
+      upload: { max_duration: "60", max_file_size: "104857600" },
+      video: { audio: { enabled: "false", strip_audio: true } } }),
+    video_config: JSON.stringify({ max_duration: 3, max_file_size: 50000000,
+      recording: { max_duration_ms: 3000, audio: { enabled: false, mute: true } },
+      trim: { max_duration_ms: "60000", max_size_mb: "100" },
+      upload: { max_duration: 60, max_upload_bytes: 104857600 },
+      unknown: { max_duration: 3, max_size_mb: 100 } }),
+    camera_roll_video_upload_config: '{"max_duration":60,"max_file_size":104857600}',
+    camera_roll_video_max_duration: "60.0", video_upload_max_duration: "60.0",
+    max_video_record_duration: "3.0", max_file_size: "50000000"
+  } } }).body.entries;
+  const camera = JSON.parse(entries.camera), shared = JSON.parse(entries.video_config);
+  assert.equal(camera.max_duration, "60");
+  assert.equal(camera.max_file_size, 50000000);
+  assert.deepEqual(camera.upload, { max_duration: "10", max_file_size: "6291456" });
+  assert.deepEqual(camera.video.audio, { enabled: "true", strip_audio: false });
+  assert.equal(shared.max_duration, 60);
+  assert.equal(shared.max_file_size, 50000000);
+  assert.equal(shared.recording.max_duration_ms, 60000);
+  assert.deepEqual(shared.recording.audio, { enabled: true, mute: false });
+  assert.deepEqual(shared.trim, { max_duration_ms: "10000", max_size_mb: "6" });
+  assert.deepEqual(shared.upload, { max_duration: 10, max_upload_bytes: 6291456 });
+  assert.deepEqual(shared.unknown, { max_duration: 3, max_size_mb: 100 });
+  assert.deepEqual(JSON.parse(entries.camera_roll_video_upload_config), { max_duration: 10, max_file_size: 6291456 });
+  assert.equal(entries.camera_roll_video_max_duration, "10.0");
+  assert.equal(entries.video_upload_max_duration, "10.0");
+  assert.equal(entries.max_video_record_duration, "60.0");
+  assert.equal(entries.max_file_size, "50000000");
+});
+
+test("the default caption profile renders with gradients and no external artwork dependency", () => {
+  const entries = run({ url: firebase, payload: { entries: {
+    overlay_dynamic_captions: '["weather","music","cuios_old_id"]'
+  } } }).body.entries;
+  const captions = JSON.parse(entries.overlay_items).flatMap(group => group.items);
+  assert.equal(captions.length, 54);
+  assert.ok(captions.every(item => item.caption.background.colors.length === 2 && !item.caption.background.image));
+  assert.ok(captions.every(item => item.caption.localized_text.vn === item.caption.text && item.caption.localized_text.vi === item.caption.text));
+  assert.deepEqual(JSON.parse(entries.overlay_dynamic_captions), ["standard", "weather", "music"]);
+  assert.equal(entries.widget_frame_event, undefined);
+  assert.equal(entries.video_config, undefined);
+});
+
+test("real HTTPS diagnostic routes export the same private-data-free report without local DNS", () => {
+  const store = memoryStore();
+  run({ url: firebase, payload: { entries: { mh_mic_enabled_v99: "false", audio_secret: "never-export-this" } }, store });
+  const url = "https://firebaseremoteconfig.googleapis.com/cuios-check?view=report";
+  const response = run({ url, requestOnly: true, store }).output.response;
+  const parsed = JSON.parse(response.body);
+  assert.equal(parsed.runtime, "4.1.0");
+  assert.deepEqual(parsed.recipe, { recordingSeconds: 60, uploadSeconds: 10, uploadBytes: 6291456, captions: 54 });
+  assert.equal(parsed.deviceFeaturesVerified, false);
+  assert.ok(parsed.observed.firebase.inputMediaFields.some(field => field.path === "entries" && field.field === "mh_mic_enabled_v99" && field.flag === "off"));
+  assert.ok(!response.body.includes("never-export-this"));
+  const html = run({ url: url.replace("view=report", "view=status"), requestOnly: true, store }).output.response;
+  assert.ok(html.body.includes("href='/cuios-check?view=report'"));
+  assert.ok(html.body.includes("href='/cuios-check?view=status'"));
+  assert.equal(run({ url, requestOnly: true, method: "POST", store }).output.response.status, 405);
+  assert.equal(run({ url, requestOnly: true, method: "HEAD", store }).output.response.body, "");
+  assert.equal(rules.filter(rule => rule.type === "http-request" && rule.pattern.test(url)).length, 1);
+});
+
+test("v4.0.0 remains immutable and its 100 MiB library overwrite is corrected in this release", () => {
+  const crypto = require("node:crypto");
+  const previous = fs.readFileSync(path.join(root, "scripts/releases/locket-v4.0.0-fddb9e4d0469.js"));
+  assert.equal(crypto.createHash("sha256").update(previous).digest("hex"), "fddb9e4d046964b2fbd846a57c5a41ed77b9bc161b5bb83a54e228b2c2a839d3");
+  const entries = run({ url: firebase, payload: { entries: {
+    camera: '{"max_duration":60}', camera_roll: '{"max_duration":60,"max_upload_bytes":104857600}'
+  } } }).body.entries;
+  assert.equal(JSON.parse(entries.camera).max_duration, 60);
+  assert.equal(JSON.parse(entries.camera_roll).max_duration, 10);
+  assert.equal(JSON.parse(entries.camera_roll).max_upload_bytes, 6291456);
 });
