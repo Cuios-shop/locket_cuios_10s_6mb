@@ -29,7 +29,7 @@ Nguồn RevenueCat tại commit `937b71ef0825f56d407569f06305b924eaea707c`:
 - [HTTPRequestPath.swift](https://github.com/RevenueCat/purchases-ios/blob/937b71ef0825f56d407569f06305b924eaea707c/Sources/Networking/HTTPClient/HTTPRequestPath.swift)
 - [Cấu hình host backup](https://www.revenuecat.com/docs/getting-started/configuring-sdk)
 
-Bundle chính com.locket.Locket được đối chiếu qua [metadata App Store](https://itunes.apple.com/lookup?id=1600525061&country=vn). Project number 869942740286 là alias được đối chiếu cùng projectId locket-4252a trong [cấu hình client công khai](https://github.com/vtd182/locket_uploader/blob/f34cab8fcd5fde7cdaab7899fd1936e15a6842b6/lib/firebase_options.dart); đây không phải bằng chứng Locket iOS dùng đường dẫn số. SDK Firebase iOS hiện tại dùng projectID khi xây URL.
+Bundle chính com.locket.Locket được đối chiếu qua [metadata App Store](https://itunes.apple.com/lookup?id=1600525061&country=vn). Project number 869942740286 là alias được đối chiếu cùng projectId locket-4252a trong tài liệu cấu hình Firebase đã đối chiếu; đây không phải bằng chứng Locket iOS dùng đường dẫn số. SDK Firebase iOS hiện tại dùng projectID khi xây URL.
 
 ## Chuỗi trạng thái cần phân biệt
 

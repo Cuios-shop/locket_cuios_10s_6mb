@@ -4,3 +4,14 @@ node_modules/
 *.log
 .DS_Store
 captures/
+
+# Private authoring/export material
+/private-dist/
+/security-reports/
+*.bundle
+*.p12
+*.pfx
+*.pem
+*.key
+__pycache__/
+*.py[cod]

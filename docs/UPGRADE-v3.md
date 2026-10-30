@@ -12,7 +12,7 @@ Các key byte chính: max_file_size, max_upload_bytes, max_size_bytes. Alias byt
 
 camera_roll_video_config, camera_roll_video_upload_config và video_upload_config chỉ sửa khi server đã cung cấp object; không tạo schema mới nếu thiếu.
 
-Nguồn đối chiếu: [module có giới hạn file trong camera_roll](https://github.com/K4Z3X0R/NguyenNgocAnhTu/blob/746265251f14794b4c0f260a88227cf95891f487/Module/js/Locket_30s.js) và [SDK cộng đồng kiểm tra 6291456 bytes](https://github.com/hmkk69/locket.js/blob/main/lib/modules/moments.js). Đây không phải hợp đồng API Locket, cũng không chứng minh có thể nâng trần máy chủ bằng proxy.
+Đã đối chiếu cấu trúc giới hạn file trong camera_roll và ngưỡng 6291456 bytes ở tài liệu cộng đồng. Đây không phải hợp đồng API Locket, cũng không chứng minh có thể nâng trần máy chủ bằng proxy.
 
 Log input library limits chỉ ghi path định sẵn và số trong các field giới hạn đã biết. Nếu vẫn dừng ở 10s/6 MB, cần log/schema đã che dữ liệu riêng. Nếu chọn được đủ nhưng gửi bị từ chối, cần lỗi server thật. Test JSON không chứng minh upload thành công.
 

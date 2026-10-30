@@ -85,3 +85,7 @@ npm test
 44 test: chia giới hạn quay/nhập/cắt; giữ đơn vị/kiểu/schema khác; âm thanh lồng nhau; 54 ghi chú và renderer; HTTPS report/redaction; hồi quy nhận diện/ETag/cache/NO_CHANGE; integrity runtime mới và artifact v4.0.0 bất biến. Kiểm tra thực tế còn cần: clip quay vượt 3s rồi 60s, yêu cầu mic và tiếng sau gửi; nhập clip 10s dưới 6 MiB; thấy 54 ghi chú.
 
 Runtime có tên chứa hash; mọi rule dùng cùng file. `release.json` chứa SHA-256 đầy đủ. Khi đổi logic, tăng version và dựng artifact mới; không sửa file đã phát hành. Mã kế thừa theo MIT.
+
+## Mã nguồn và quyền truy cập
+
+Xem [SECURITY.md](SECURITY.md) để biết kết quả quét, giới hạn của link raw, điều kiện chuyển private và việc JS trên thiết bị vẫn có thể bị sao chép. Hai repo hiện vẫn public để giữ module tải được; chưa có hosting thay thế.

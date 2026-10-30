@@ -15,14 +15,10 @@ Vì vậy, chưa thể kết luận nguyên nhân giới hạn 15 giây đã đ�
 
 | Nguồn | Điều quan sát được | Điều không chứng minh |
 | --- | --- | --- |
-| [Repo gốc anhtu4n, commit 7c9b967](https://github.com/anhtu4n/locket30s/tree/7c9b967b86a402425dd5035879010f39c87e87bc) | Mã dùng camera/camera_roll, cờ thư viện/âm thanh và overlay JSON; module có routing lỗi | Schema chính thức hoặc hiệu quả thực tế của các key |
-| [Module luongkun 60s, commit 8fcd075](https://github.com/luongkun/locket/blob/8fcd0752ef2b0895fda0ec7538dff7e238cf23d1/locket_fire_base_config60sfull.js) | Có các giá trị 60 cho camera, camera_roll và nhiều key entry, ba cờ mic/âm thanh | Gửi thành công clip 60 giây có tiếng trên phiên bản Locket cụ thể |
-| [Module K4Z3X0R, commit 7462652](https://github.com/K4Z3X0R/NguyenNgocAnhTu/blob/746265251f14794b4c0f260a88227cf95891f487/Module/js/Locket_30s.js) | Có thêm feature gates, các biến thể key duration, video_config và xử lý cache | Giá trị 9999 trong file là thời lượng được client/server chấp nhận |
-| [Fixture cộng đồng tại cùng commit](https://github.com/K4Z3X0R/NguyenNgocAnhTu/blob/746265251f14794b4c0f260a88227cf95891f487/.github/scripts/locket_full_firebase.json) | Nhiều alias thời lượng có giá trị 45 và 90 không đồng nhất | Đây là response chưa sửa từ Locket hoặc cấu hình đã kiểm chứng |
 | [Firebase iOS Remote Config](https://firebase.google.com/docs/remote-config/ios/get-started) | SDK quản lý fetch/activate, giá trị mặc định và khoảng thời gian fetch | `Cache-Control: no-store` đủ xoá cache trong SDK |
 | [Apple: quyền truy cập phần cứng](https://support.apple.com/en-ie/guide/iphone/iph168c4bbd5/27/ios/27) | Camera/microphone cần quyền do người dùng cấp cho app | Script proxy có thể cấp quyền iOS hoặc thay đổi AVAudioSession |
 
-Các repo cộng đồng là bằng chứng về cách họ viết module, không phải tài liệu nội bộ hoặc kiểm chứng của Locket. Bản này viết mã riêng và dùng các tên trường để thử tương thích; không sao chép các bộ quảng cáo/caption của họ.
+Tài liệu đối chiếu bên ngoài chỉ được dùng để tham khảo cấu trúc camera/camera_roll, cờ media và schema overlay. Đây không phải hợp đồng API hay kiểm chứng của Locket. Bản hiện tại có phần triển khai kế thừa và phần được viết lại; tên thương hiệu không xác lập quyền sở hữu độc quyền đối với phần kế thừa.
 
 ## Các thay đổi cụ thể
 

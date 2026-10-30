@@ -11,7 +11,7 @@ Không thể coi các cờ media từng thêm là đã hoạt động. Không c�
 ## Sửa trong v2.1
 
 - Giữ thuật toán/thời lượng 60 giây; thêm các cờ tương thích ở camera/camera_roll mà không thay codec, bitrate, upload API hay bucket.
-- Thử `mh_mic_enabled_v16` theo [mã cộng đồng đã đối chiếu](https://github.com/K4Z3X0R/NguyenNgocAnhTu/blob/746265251f14794b4c0f260a88227cf95891f487/Module/js/Locket_30s.js). Chưa có bằng chứng đây là key thực của Locket 2.70 hoặc nó có thể kích hoạt thu âm.
+- Thử `mh_mic_enabled_v16` theo tài liệu đối chiếu cấu hình. Chưa có bằng chứng đây là key thực của Locket 2.70 hoặc nó có thể kích hoạt thu âm.
 - Sửa việc ID của ghi chú custom chỉ có trong overlay_items: thêm các ID tương ứng vào overlay_dynamic_captions, giữ các ID đã có. Đây là giả thuyết tương thích cần test trên client, không phải nguyên nhân đã được xác nhận.
 - Log cấu trúc các entry và trạng thái một danh sách flag cố định trước khi ghi đè. Các chuỗi giá trị lạ chỉ được ghi là other/unparsed-string; không in nội dung gốc.
 - Khung PNG có tâm trong suốt được đặt trong variant riêng bằng schema widget_frame_event từ module gốc. Không có cơ sở để khẳng định schema menu/style khung mới được native hỗ trợ, nên không tự dựng chúng.

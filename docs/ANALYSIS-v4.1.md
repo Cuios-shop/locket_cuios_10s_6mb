@@ -22,12 +22,7 @@ Không thấy prompt chưa xác định được nguyên nhân: có thể app ch
 
 v4.0 thay `overlay_dynamic_captions` bằng ID tùy biến. v4.1 giữ renderer server và một fallback tên native từ schema cộng đồng, trong khi thay `overlay_items` bằng 54 mẫu. Nền gradient bỏ phụ thuộc ảnh ngoài ở profile mặc định. Đây là phương án thử tương thích, không có bằng chứng parser native đã từ chối danh sách v4.0.
 
-Đối chiếu các script công khai tại các commit sau, chỉ đọc, không chạy hoặc sao chép nội dung của tác giả:
-
-- [luongkun/locket 8fcd075](https://github.com/luongkun/locket/blob/8fcd0752ef2b0895fda0ec7538dff7e238cf23d1/locket_fire_base_config60sfull.js)
-- [PhTrien/Module_IOS a4556fe](https://github.com/PhTrien/Module_IOS/blob/a4556fefbd26115e83e2398509394873a4473811/js/Locket_Unlocked.js)
-
-Chúng có cấu trúc camera/camera_roll, feature_gates và static_content tương tự, nhiều cờ âm thanh tương tự. Số lượng repo dùng cùng cờ không xác minh được app mới nhận cờ, gọi mic hoặc chấp nhận video dài. Repo nguồn anhtu4n/locket30s hiện không đọc được bằng GitHub API ở lần kiểm tra này; dùng lịch sử local đã giữ nguyên cho đối chiếu.
+Đã đối chiếu các script công khai bên ngoài để tham khảo cấu trúc camera/camera_roll, feature_gates và static_content. Việc nhiều script dùng cùng một cờ không xác minh được app mới đọc cờ, gọi mic hoặc chấp nhận video dài. Nguồn ban đầu không đọc được bằng GitHub API ở lần kiểm tra đó; lịch sử local đã được giữ để đối chiếu.
 
 ## Chẩn đoán và phát hành
 
